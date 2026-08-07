@@ -120,9 +120,6 @@ def main() -> int:
     print(f"{fragmentos} fragmentos · {total / 60:.1f} min · kb_version={version}")
     estado = store.estado()
     print(f"Chroma: {estado['fragmentos']} fragmentos de {estado['documentos']} documentos")
-
-    compactado = store.compactar()
-    print(f"Compactado: {compactado['antes_mb']} → {compactado['despues_mb']} MB")
     peso = sum(f.stat().st_size for f in Path(s.dir_chroma).rglob("*") if f.is_file())
     print(f"Índice en disco: {peso / 1e6:.0f} MB")
 

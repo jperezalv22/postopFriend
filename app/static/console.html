@@ -3,24 +3,293 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>postopFriend · Conocimiento</title>
+  <title>postopFriend · conocimiento</title>
   <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📚</text></svg>">
+  <style>
+    #zona-carga {
+      border: 2px dashed var(--borde); border-radius: var(--radio);
+      padding: 26px; text-align: center; color: var(--tenue);
+      cursor: pointer; transition: border-color .15s, background .15s;
+    }
+    #zona-carga.encima { border-color: var(--acento); background: var(--panel-alto); color: var(--texto); }
+    .barra { height: 5px; background: var(--panel-alto); border-radius: 3px; overflow: hidden; margin-top: 7px; }
+    .barra > div { height: 100%; background: var(--acento); transition: width .25s; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .6px;
+         color: var(--tenue); padding: 7px 8px; border-bottom: 1px solid var(--borde); font-weight: 600; }
+    td { padding: 9px 8px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+    tr.subido td:first-child { border-left: 3px solid var(--acento); padding-left: 9px; }
+    .pastilla { display: inline-block; padding: 1px 8px; border-radius: 20px; font-size: 11px;
+                background: var(--panel-alto); color: var(--tenue); }
+    .pastilla.disponible { background: #12261a; color: var(--verde); }
+    .pastilla.sin_texto, .pastilla.error { background: #2d1417; color: var(--rojo); }
+    input[type=text], input[type=search] {
+      padding: 9px 12px; border-radius: 8px; border: 1px solid var(--borde);
+      background: var(--panel-alto); color: var(--texto); font: inherit;
+    }
+    pre { background: var(--panel-alto); padding: 11px; border-radius: 8px; overflow-x: auto;
+          font-size: 12px; margin: 8px 0 0; max-height: 300px; }
+  </style>
 </head>
 <body>
   <header>
     <h1>postop<span>Friend</span></h1>
     <nav>
       <a href="/">Llamada</a>
-      <a href="/consola">Conocimiento</a>
+      <a href="/consola" class="activo">Conocimiento</a>
       <a href="/panel">Panel</a>
       <a href="/salud-voz">Salud de voz</a>
     </nav>
   </header>
-  <main style="grid-template-columns:1fr;max-width:900px">
-    <div class="tarjeta">
-      <h2>Conocimiento</h2>
-      <p class="vacio">En construcción. Bloque del sábado 8 de agosto según el cronograma del plan maestro.</p>
-    </div>
+
+  <main style="grid-template-columns:1fr 400px">
+    <section>
+      <div class="tarjeta">
+        <h2>Subir documentos</h2>
+        <div id="zona-carga">
+          <strong>Arrastre archivos aquí</strong> o haga clic para elegir<br>
+          <span style="font-size:13px">PDF, DOCX, TXT o MD · hasta 60 MB</span>
+          <input type="file" id="archivos" multiple accept=".pdf,.docx,.txt,.md" hidden>
+        </div>
+        <div id="ingestas" style="margin-top:12px"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Documentos indexados</h2>
+        <div class="fila" style="margin-bottom:12px">
+          <input type="search" id="buscar" placeholder="Buscar por título…" style="flex:1">
+          <select id="filtro-origen">
+            <option value="">Todos</option>
+            <option value="subido">Solo subidos</option>
+            <option value="base">Solo corpus base</option>
+          </select>
+        </div>
+        <div style="max-height:56vh;overflow-y:auto">
+          <table>
+            <thead><tr>
+              <th>Documento</th><th>Procedimiento</th><th>Idioma</th>
+              <th>Págs</th><th>Frags</th><th>Estado</th><th></th>
+            </tr></thead>
+            <tbody id="tabla"><tr><td colspan="7" class="vacio">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="tarjeta">
+        <h2>Estado del conocimiento</h2>
+        <div class="metricas">
+          <div class="metrica"><div class="num" id="e-docs">—</div><div class="eti">documentos</div></div>
+          <div class="metrica"><div class="num" id="e-frags">—</div><div class="eti">fragmentos</div></div>
+          <div class="metrica"><div class="num" id="e-version">—</div><div class="eti">kb_version</div></div>
+        </div>
+        <div class="mono" id="e-modelo" style="margin-top:10px;color:var(--tenue)"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Probar el conocimiento</h2>
+        <p style="margin-top:0;font-size:13px;color:var(--tenue)">
+          Recupera fragmentos <strong>sin pasar por el LLM</strong>. Separa dos preguntas
+          que se confunden cuando una respuesta sale mal: ¿no se encontró la fuente, o
+          se encontró y el modelo la ignoró?
+        </p>
+        <div class="fila">
+          <input type="text" id="consulta" style="flex:1"
+                 placeholder="¿cuándo me puedo bañar?">
+          <button id="btn-probar" class="primario">Buscar</button>
+        </div>
+        <div id="resultado-prueba"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Verificar olvido</h2>
+        <p style="margin-top:0;font-size:13px;color:var(--tenue)">
+          Tras eliminar un documento, comprueba que ya no se recupera: fragmentos en
+          Chroma, registros en la base y aciertos en una búsqueda real.
+        </p>
+        <div class="fila">
+          <input type="text" id="doc-olvido" style="flex:1" placeholder="doc_id eliminado">
+          <button id="btn-olvido">Verificar</button>
+        </div>
+        <div id="resultado-olvido"></div>
+      </div>
+    </aside>
   </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replace(/[<>&"]/g, (c) =>
+      ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+
+    // ─── Estado y listado ───────────────────────────────────────────────────
+    async function refrescar() {
+      const [estado, lista] = await Promise.all([
+        fetch("/api/kb/estado").then((r) => r.json()),
+        fetch(`/api/kb/documentos?origen=${$("filtro-origen").value}&buscar=${encodeURIComponent($("buscar").value)}`)
+          .then((r) => r.json()),
+      ]);
+      $("e-docs").textContent = estado.documentos;
+      $("e-frags").textContent = estado.fragmentos.toLocaleString("es-CO");
+      $("e-version").textContent = estado.kb_version;
+      $("e-modelo").textContent = estado.modelo_embeddings;
+      pintarTabla(lista.documentos);
+    }
+
+    function pintarTabla(docs) {
+      if (!docs.length) {
+        $("tabla").innerHTML = '<tr><td colspan="7" class="vacio">Sin resultados.</td></tr>';
+        return;
+      }
+      $("tabla").innerHTML = docs.map((d) => `
+        <tr class="${d.origen === "subido" ? "subido" : ""}">
+          <td>
+            <div style="font-weight:500">${esc(d.titulo)}</div>
+            <div class="mono" style="color:var(--tenue)">${esc(d.doc_id)} · ${esc(d.sha256)}
+              ${d.origen === "subido" ? " · subido" : ""}</div>
+            ${d.detalle ? `<div class="evidencia" style="color:var(--amarillo)">${esc(d.detalle)}</div>` : ""}
+          </td>
+          <td>${esc(d.procedimiento)}</td>
+          <td>${esc(d.idioma)}</td>
+          <td>${d.paginas ?? "—"}</td>
+          <td>${d.chunks ?? "—"}</td>
+          <td><span class="pastilla ${esc(d.estado)}">${esc(d.estado)}</span></td>
+          <td style="white-space:nowrap">
+            <a href="/api/kb/source/${encodeURIComponent(d.doc_id)}" target="_blank" rel="noopener">ver</a>
+            &nbsp;<a href="#" onclick="eliminar('${d.doc_id}','${esc(d.titulo).replace(/'/g, "")}');return false"
+               style="color:var(--rojo)">eliminar</a>
+          </td>
+        </tr>`).join("");
+    }
+
+    // ─── Alta ───────────────────────────────────────────────────────────────
+    const zona = $("zona-carga");
+    zona.addEventListener("click", () => $("archivos").click());
+    zona.addEventListener("dragover", (e) => { e.preventDefault(); zona.classList.add("encima"); });
+    zona.addEventListener("dragleave", () => zona.classList.remove("encima"));
+    zona.addEventListener("drop", (e) => {
+      e.preventDefault(); zona.classList.remove("encima");
+      subir([...e.dataTransfer.files]);
+    });
+    $("archivos").addEventListener("change", (e) => subir([...e.target.files]));
+
+    async function subir(archivos) {
+      for (const archivo of archivos) {
+        const caja = document.createElement("div");
+        caja.className = "cita";
+        caja.innerHTML = `<div class="titulo">${esc(archivo.name)}</div>
+          <div class="meta">enviando…</div><div class="barra"><div style="width:5%"></div></div>`;
+        $("ingestas").prepend(caja);
+
+        const cuerpo = new FormData();
+        cuerpo.append("archivo", archivo);
+        try {
+          const r = await fetch("/api/kb/documentos", { method: "POST", body: cuerpo });
+          if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+          seguir((await r.json()).tarea_id, caja);
+        } catch (e) {
+          caja.querySelector(".meta").innerHTML =
+            `<span style="color:var(--rojo)">${esc(e.message)}</span>`;
+        }
+      }
+    }
+
+    async function seguir(tareaId, caja) {
+      const meta = caja.querySelector(".meta");
+      const barra = caja.querySelector(".barra > div");
+      while (true) {
+        await new Promise((r) => setTimeout(r, 400));
+        const p = await fetch(`/api/kb/progreso/${tareaId}`).then((r) => r.json());
+        barra.style.width = `${p.porcentaje}%`;
+        meta.textContent = p.etiqueta || p.fase;
+        if (!p.terminado) continue;
+
+        const res = p.resultado || {};
+        if (res.estado === "disponible") {
+          meta.innerHTML = `<span style="color:var(--verde)">disponible</span> ·
+            ${res.fragmentos} fragmentos · ${res.paginas} páginas · ${res.segundos}s ·
+            kb_version ${res.kb_version}`;
+        } else if (res.estado === "duplicado") {
+          meta.innerHTML = `<span style="color:var(--amarillo)">duplicado</span> · ${esc(res.detalle)}`;
+        } else {
+          meta.innerHTML = `<span style="color:var(--rojo)">${esc(res.estado)}</span> · ${esc(res.detalle)}`;
+        }
+        refrescar();
+        break;
+      }
+    }
+
+    // ─── Baja ───────────────────────────────────────────────────────────────
+    window.eliminar = async (docId, titulo) => {
+      if (!confirm(`¿Eliminar «${titulo}» del conocimiento del agente?`)) return;
+      const r = await fetch(`/api/kb/documentos/${encodeURIComponent(docId)}`, { method: "DELETE" });
+      const d = await r.json();
+      if (!r.ok) return alert(d.detail || "no se pudo eliminar");
+      $("doc-olvido").value = docId;
+      alert(`Eliminado: ${d.fragmentos_eliminados} fragmentos. kb_version ahora ${d.kb_version}.\n\n` +
+            `El doc_id quedó en «Verificar olvido» para que lo compruebe.`);
+      refrescar();
+    };
+
+    // ─── Probar ─────────────────────────────────────────────────────────────
+    $("btn-probar").addEventListener("click", probar);
+    $("consulta").addEventListener("keydown", (e) => e.key === "Enter" && probar());
+
+    async function probar() {
+      const consulta = $("consulta").value.trim();
+      if (!consulta) return;
+      $("resultado-prueba").innerHTML = '<p class="vacio">Buscando…</p>';
+      const d = await fetch("/api/kb/probar", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ consulta }),
+      }).then((r) => r.json());
+
+      const aviso = d.abstendria
+        ? `<div class="cita" style="border-left:3px solid var(--amarillo)">
+             <strong>El agente se abstendría</strong>
+             <div class="meta">${esc(d.motivo_abstencion)}</div>
+             <div class="meta">Declararía que no lo tiene en sus guías.</div></div>`
+        : `<div class="cita" style="border-left:3px solid var(--verde)">
+             <strong>El agente respondería</strong>
+             <div class="meta">relevancia ${d.relevancia}</div></div>`;
+
+      $("resultado-prueba").innerHTML = aviso + d.citas.map((c, i) => `
+        <div class="cita">
+          <div class="titulo">[F${i + 1}] ${esc(c.titulo)}</div>
+          <div class="meta">p. ${c.pagina} · score ${c.score} · denso ${c.score_denso} ·
+            BM25 ${c.score_lexico} · <a href="${c.url}" target="_blank" rel="noopener">ver fuente</a></div>
+          <blockquote>${esc(c.fragmento)}</blockquote>
+        </div>`).join("");
+    }
+
+    // ─── Verificar olvido ───────────────────────────────────────────────────
+    $("btn-olvido").addEventListener("click", async () => {
+      const docId = $("doc-olvido").value.trim();
+      if (!docId) return;
+      const d = await fetch("/api/kb/verificar-olvido", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ doc_id: docId, consulta: $("consulta").value.trim() || null }),
+      }).then((r) => r.json());
+
+      const ok = d.olvidado;
+      $("resultado-olvido").innerHTML = `
+        <div class="cita" style="border-left:3px solid var(--${ok ? "verde" : "rojo"})">
+          <strong style="color:var(--${ok ? "verde" : "rojo"})">
+            ${ok ? "Olvidado por completo" : "TODAVÍA HAY RASTRO"}</strong>
+          <div class="meta">
+            ${d.fragmentos_en_chroma} fragmentos en Chroma ·
+            ${d.registros_en_sqlite} registros en la base ·
+            ${d.fragmentos_recuperados_de_este_documento} recuperados en la búsqueda ·
+            kb_version ${d.kb_version}
+          </div>
+        </div>
+        <pre>${esc(JSON.stringify(d.busqueda ?? d, null, 2))}</pre>`;
+    });
+
+    $("buscar").addEventListener("input", refrescar);
+    $("filtro-origen").addEventListener("change", refrescar);
+    refrescar();
+  </script>
 </body>
 </html>

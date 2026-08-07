@@ -22,6 +22,7 @@ de red y el arranque del audio, es decir, la maquillaría a favor propio.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -29,14 +30,17 @@ from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.agent import generator, scripts_es_co
+from app.agent import extractor, flow, generator, router as router_intencion, scripts_es_co
+from app.agent.flow import Contexto, Estado, Intencion
 from app.config import get_settings
 from app.obs.logger import ahora_iso, registrar_turno
 from app.obs.trace import TurnTrace
+from app.rag import retriever
 from app.store import db
 from app.store.patients import Ficha, construir_ficha
+from app.triage.engine import evaluar
+from app.triage.escalation import construir_alerta, escalar
 from app.voice import stt, tts
-from app.voice.segmenter import Segmentador
 
 log = logging.getLogger("postopfriend.llamada")
 router = APIRouter()
@@ -52,6 +56,9 @@ class Sesion:
     turno_actual: int = -1          # turno cuyo audio se está reproduciendo
     interrumpido: set[int] = field(default_factory=set)
     trazas: dict[int, TurnTrace] = field(default_factory=dict)
+    contexto: Contexto = field(default_factory=Contexto)
+    referencias: list[dict[str, Any]] = field(default_factory=list)
+    alerta_id: str = ""
 
     async def enviar(self, **datos: Any) -> None:
         await self.ws.send_json(datos)
@@ -203,6 +210,13 @@ async def _manejar_audio(sesion: Sesion, audio: bytes) -> None:
 async def _procesar_turno(
     sesion: Sesion, texto: str, t_fin_habla: Any, duracion: float, traza: TurnTrace
 ) -> None:
+    """Un turno completo: entender, clasificar, decidir, buscar, responder, escalar.
+
+    Presupuesto: **dos llamadas al LLM**. El extractor y el generador. El router es
+    determinista y el triage también, así que ninguno de los dos gasta latencia ni
+    tokens. Es la razón de que el turno quepa en el objetivo de 1.5 s.
+    """
+    ctx = sesion.contexto
     idx_paciente = sesion.anotar("paciente", texto)
     await sesion.enviar(tipo="turno", hablante="paciente", texto=texto, turno_idx=idx_paciente)
 
@@ -213,9 +227,113 @@ async def _procesar_turno(
     traza.audio_paciente_s = traza.audio_paciente_s or duracion
     sesion.trazas[idx] = traza
 
-    respuesta = await generator.responder(sesion.ficha, sesion.dialogo, traza)
+    # ─── 1. Intención (determinista, 0 ms) ───────────────────────────────────
+    intencion = router_intencion.clasificar(texto)
+    if intencion is Intencion.INYECCION:
+        traza.incidencia(f"inyeccion_por_voz:{texto[:40]}")
+        ctx.anotar("intento_de_inyeccion")
+
+    # ─── 2. Estado clínico sobre TODO el diálogo (llamada 1 al LLM) ──────────
+    # Sobre el diálogo acumulado, no sobre el último turno: un «ayer me sentí
+    # afiebrada, como 38» del turno 3 no puede perderse en el turno 9.
+    estado, incidencias = await extractor.extraer(sesion.ficha, sesion.dialogo, traza)
+    ctx.estado_clinico = estado
+    for inc in incidencias:
+        traza.incidencia(inc)
+
+    # ─── 3. Triage determinista (0 ms, sin LLM) ──────────────────────────────
+    decision = evaluar(
+        estado,
+        comorbilidades=sesion.ficha.paciente.comorbilidades if sesion.ficha else [],
+        dia_postop=sesion.ficha.dia_postop if sesion.ficha else None,
+        intentos_agotados=ctx.intentos_agotados,
+    )
+    ctx.decision = decision
+    traza.nivel_triage = str(decision.nivel)
+
+    # ─── 4. Máquina de estados ───────────────────────────────────────────────
+    flow.transicion(ctx, intencion, decision)
+    traza.estado_flujo = str(ctx.estado)
+    objetivo = flow.objetivo_del_turno(ctx)
+
+    await sesion.enviar(
+        tipo="triage", nivel=str(decision.nivel), score=decision.score,
+        variables={n: v.como_dict() for n, v in estado.variables.items()},
+        red_flags=decision.red_flags, desglose=[r.como_dict() for r in decision.desglose],
+        estado_flujo=str(ctx.estado), motivo=decision.motivo,
+    )
+
+    # ─── 5. RAG, solo si el paciente preguntó algo clínico ───────────────────
+    citas = []
+    if intencion is Intencion.PREGUNTA_CLINICA:
+        with traza.medir("rag"):
+            resultado = retriever.recuperar(
+                texto, sesion.ficha.paciente.procedimiento if sesion.ficha else None
+            )
+        traza.rag_consultas += 1
+        traza.rag_hits = len(resultado.citas)
+        if resultado.abstiene:
+            # El agente declara el límite en vez de improvisar. Es un sub-criterio
+            # explícito de la rúbrica, no una carencia.
+            traza.incidencia(f"abstencion_rag:{resultado.motivo}")
+            await sesion.enviar(tipo="abstencion", motivo=resultado.motivo,
+                                termino=resultado.termino_ausente)
+        else:
+            citas = resultado.citas
+
+    # ─── 6. Guiones fijos: no pasan por el LLM y salen del caché de audio ────
+    guion = _guion_fijo(ctx, intencion)
+    if guion:
+        respuesta, citas = guion, []
+    else:
+        # ─── 7. Redacción (llamada 2 al LLM) ─────────────────────────────────
+        respuesta, citas = await generator.responder(
+            sesion.ficha, sesion.dialogo, traza,
+            objetivo=objetivo, citas=citas, nivel=str(decision.nivel),
+        )
+
     sesion.dialogo[-1]["texto"] = respuesta
-    await _hablar(sesion, respuesta, idx, traza)
+    if citas:
+        sesion.referencias += [c.como_dict() for c in citas]
+        await sesion.enviar(tipo="citas", turno_idx=idx, citas=[c.como_dict() for c in citas])
+
+    # ─── 8. Escalamiento ─────────────────────────────────────────────────────
+    if ctx.estado is Estado.ESCALAR and not sesion.alerta_id:
+        await _escalar(sesion, decision, estado, respuesta)
+
+    await _hablar(sesion, respuesta, idx, traza, cachear=bool(guion))
+
+
+def _guion_fijo(ctx, intencion: Intencion) -> str:
+    """Los turnos donde improvisar no aporta nada y equivocarse cuesta caro.
+
+    Van sin LLM: salen en milisegundos, con el audio ya cacheado, y no dependen de
+    que haya cuota en ese instante (riesgos R2 y R3).
+    """
+    if intencion is Intencion.INYECCION:
+        return scripts_es_co.INYECCION_DETECTADA
+    if intencion is Intencion.NO_DISPONIBLE:
+        return scripts_es_co.SILENCIO_20S
+    if ctx.estado is Estado.EMERGENCIA:
+        return scripts_es_co.CIERRE_ROJO
+    return ""
+
+
+async def _escalar(sesion: Sesion, decision, estado, accion_comunicada: str) -> None:
+    """Persiste la alerta y avisa al panel. Nunca tumba la llamada si algo falla."""
+    try:
+        alerta = construir_alerta(
+            sesion.call_id, sesion.ficha, decision, estado,
+            referencias=sesion.referencias,
+            accion_comunicada=accion_comunicada,
+        )
+        resultado = await asyncio.to_thread(escalar, alerta)
+        sesion.alerta_id = resultado["alerta_id"]
+        await sesion.enviar(tipo="alerta", **resultado)
+        log.info("%s: alerta %s (%s)", sesion.call_id, resultado["alerta_id"], resultado["nivel"])
+    except Exception as e:
+        log.exception("no se pudo escalar: %s", e)
+        await sesion.enviar(tipo="error", mensaje=f"fallo al escalar: {e}")
 
 
 # ─── Salida hablada ──────────────────────────────────────────────────────────

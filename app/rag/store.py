@@ -242,33 +242,6 @@ def invalidar_indice() -> None:
         _indice = None
 
 
-def compactar() -> dict[str, int]:
-    """Purga el registro de escrituras de Chroma y compacta el archivo.
-
-    Chroma conserva en `embeddings_queue` un log de todo lo insertado. Tras una
-    reconstrucción completa son 8 MB de datos ya aplicados que se irían al repo y
-    que el jurado tendría que clonar sin necesidad. Se corre solo al final de
-    `build_index.py`, nunca con el servidor arriba.
-    """
-    import sqlite3
-
-    ruta = get_settings().dir_chroma / "chroma.sqlite3"
-    if not ruta.exists():
-        return {"antes_mb": 0, "despues_mb": 0}
-
-    antes = ruta.stat().st_size
-    _cliente.cache_clear()  # cierra el cliente antes de tocar el archivo por debajo
-    con = sqlite3.connect(ruta)
-    try:
-        con.execute("DELETE FROM embeddings_queue")
-        con.commit()
-        con.execute("VACUUM")
-    finally:
-        con.close()
-    despues = ruta.stat().st_size
-    return {"antes_mb": round(antes / 1e6), "despues_mb": round(despues / 1e6)}
-
-
 def estado() -> dict[str, Any]:
     idx = indice_lexico()
     documentos = {m.get("doc_id") for m in idx.metadatas}
