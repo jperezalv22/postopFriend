@@ -1,0 +1,35 @@
+# Credenciales
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Datos generados en tiempo de ejecución
+data/postop.db
+data/postop.db-*
+data/alertas/*.json
+data/alertas/*.md
+data/kb_audit.jsonl
+data/uploads/
+data/tts_cache/
+logs/*.jsonl
+
+# Caché de evaluaciones (se regenera; los resultados sí se versionan)
+evals/.cache/
+
+# OJO: data/chroma/ y data/bm25.pkl SÍ se versionan a propósito.
+# Son el índice pre-construido que permite cumplir la compuerta G2 (<15 min).
+
+# Kit oficial descargado. Su dataset/ ya está copiado en la raíz del repo;
+# versionarlo dos veces duplicaría el peso del clon (128 MB → 256 MB).
+ParticipantArtifacts-main/
+
+# Sistema
+.DS_Store
+Thumbs.db

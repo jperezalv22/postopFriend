@@ -1,0 +1,39 @@
+# postopFriend — dependencias fijadas
+# Verificadas en Python 3.14.4 / Windows 11. Todas tienen wheel para cp314:
+# no se compila nada y no hace falta Visual Studio Build Tools.
+# Peso total aproximado de la descarga: ~180 MB (el grueso es onnxruntime).
+# El modelo de embeddings (~470 MB) NO se descarga: el índice viene pre-construido.
+
+# ─── Servidor ─────────────────────────────────────────────────────────────────
+fastapi==0.141.1
+uvicorn[standard]==0.52.1
+python-multipart==0.0.32
+aiofiles==25.1.0
+websockets==17.0.1
+
+# ─── Configuración ────────────────────────────────────────────────────────────
+pydantic==2.13.4
+pydantic-settings==2.15.0
+python-dotenv==1.2.2
+PyYAML==6.0.3
+
+# ─── LLM y STT (Groq) ─────────────────────────────────────────────────────────
+groq==1.6.0
+
+# ─── TTS ──────────────────────────────────────────────────────────────────────
+edge-tts==7.2.8
+
+# ─── RAG ──────────────────────────────────────────────────────────────────────
+chromadb==1.5.9
+fastembed==0.8.0
+onnxruntime==1.28.0
+rank-bm25==0.2.2
+PyMuPDF==1.28.2
+python-docx==1.2.0
+numpy==2.5.1
+
+# ─── Dataset ──────────────────────────────────────────────────────────────────
+openpyxl==3.1.5
+
+# ─── Pruebas ──────────────────────────────────────────────────────────────────
+pytest==9.1.1
