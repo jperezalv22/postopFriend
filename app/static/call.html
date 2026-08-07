@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>postopFriend · llamada</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📞</text></svg>">
+</head>
+<body>
+  <header>
+    <h1>postop<span>Friend</span></h1>
+    <nav>
+      <a href="/" class="activo">Llamada</a>
+      <a href="/consola">Conocimiento</a>
+      <a href="/panel">Panel</a>
+      <a href="/salud-voz">Salud de voz</a>
+    </nav>
+  </header>
+
+  <div class="aviso">
+    Demostración con datos sintéticos. No es asesoría médica ni apta para uso asistencial.
+  </div>
+
+  <main>
+    <section>
+      <div class="tarjeta">
+        <h2>Paciente</h2>
+        <div class="fila" style="margin-bottom:14px">
+          <select id="paciente" style="flex:1;min-width:260px"></select>
+          <select id="dia"></select>
+          <button id="llamar" class="primario">Iniciar llamada</button>
+          <button id="colgar" class="peligro" disabled>Colgar</button>
+        </div>
+        <dl class="ficha" id="ficha"></dl>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Conversación</h2>
+        <div class="fila" style="margin-bottom:12px">
+          <div class="estado"><span class="punto" id="punto"></span><span id="estado">Sin llamada</span></div>
+          <span class="mono" id="modo" style="margin-left:auto;color:var(--tenue)"></span>
+        </div>
+        <div id="transcripcion">
+          <p class="vacio">Elija un paciente y pulse «Iniciar llamada». El agente habla primero: es él quien llama.</p>
+        </div>
+        <div class="fila" style="margin-top:12px">
+          <input id="entrada-texto" placeholder="…o escriba aquí si no tiene micrófono"
+                 style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid var(--borde);background:var(--panel-alto);color:var(--texto);font:inherit"
+                 disabled>
+          <button id="enviar-texto" disabled>Enviar</button>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="tarjeta">
+        <h2>Triage en vivo</h2>
+        <div style="margin-bottom:12px">
+          <span class="nivel indeterminado" id="nivel">indeterminado</span>
+          <span class="mono" id="score" style="float:right;color:var(--tenue)"></span>
+        </div>
+        <div id="variables"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Latencia del último turno</h2>
+        <div class="metricas" id="metricas">
+          <div class="metrica"><div class="num" id="m-latencia">—</div><div class="eti">fin habla → audio</div></div>
+          <div class="metrica"><div class="num" id="m-p50">—</div><div class="eti">P50 sesión</div></div>
+          <div class="metrica"><div class="num" id="m-tokens">—</div><div class="eti">tokens</div></div>
+        </div>
+        <div class="mono" id="etapas" style="margin-top:10px;color:var(--tenue)"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Fuentes citadas</h2>
+        <div id="citas"><p class="vacio">Sin consultas al conocimiento todavía.</p></div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="/static/vendor/ort.wasm.min.js"></script>
+  <script src="/static/vendor/vad.bundle.min.js"></script>
+  <script src="/static/js/player.js"></script>
+  <script src="/static/js/audio.js"></script>
+  <script src="/static/js/call.js"></script>
+</body>
+</html>

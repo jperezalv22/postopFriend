@@ -86,14 +86,36 @@ def revisar_indice(s) -> None:
         marcar(
             AVISO,
             "Índice RAG",
-            "No hay índice. Solución: python scripts/build_index.py  (~4 min y ~470 MB\n"
-            "         de descarga del modelo de embeddings la primera vez)",
+            "No hay índice. Solución: python scripts/build_index.py\n"
+            "         (el repo lo trae construido; solo hace falta si lo borró)",
         )
         return
-    peso = sqlite_chroma.stat().st_size / 1e6
-    bm25 = "con BM25" if s.ruta_bm25.exists() else "SIN BM25 — reconstruya el índice"
-    estado = OK if s.ruta_bm25.exists() else AVISO
-    marcar(estado, "Índice RAG", f"data/chroma/chroma.sqlite3 · {peso:.0f} MB · {bm25}")
+    try:
+        from app.rag import store
+
+        e = store.estado()
+        marcar(
+            OK,
+            "Índice RAG",
+            f"{e['fragmentos']} fragmentos de {e['documentos']} documentos · kb_version={e['kb_version']}",
+        )
+    except Exception as ex:
+        marcar(FALLO, "Índice RAG", f"el índice existe pero no se pudo abrir: {ex}")
+
+
+def revisar_modelo_embeddings(s) -> None:
+    from app.rag import embedder
+
+    if embedder.modelo_descargado():
+        peso = sum(f.stat().st_size for f in s.dir_modelos.rglob("*") if f.is_file())
+        marcar(OK, "Modelo de embeddings", f"{s.embed_model} en caché · {peso / 1e6:.0f} MB")
+    else:
+        marcar(
+            AVISO,
+            "Modelo de embeddings",
+            f"{s.embed_model} sin descargar (~220 MB la primera vez que se use).\n"
+            "         Solución: python scripts/precalentar.py",
+        )
 
 
 def revisar_clave(s) -> None:
@@ -164,6 +186,7 @@ def main() -> int:
     revisar_entorno_virtual()
     revisar_dependencias()
     revisar_dataset(s)
+    revisar_modelo_embeddings(s)
     revisar_indice(s)
     revisar_clave(s)
     if not args.sin_red:

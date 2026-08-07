@@ -24,7 +24,9 @@ class Settings(BaseSettings):
     # G3: ver la sección "Cumplimiento G3" del README antes de cambiar esto.
     llm_model: str = "llama-3.3-70b-versatile"
     stt_model: str = "whisper-large-v3-turbo"
-    embed_model: str = "intfloat/multilingual-e5-small"
+    # Ver app/rag/embedder.py: e5-small no existe en fastembed; este es el
+    # multilingüe más liviano del catálogo (384 dim, ~220 MB).
+    embed_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
     # ─── Voz ─────────────────────────────────────────────────────────────────
     tts_backend: str = "edge"
@@ -70,8 +72,9 @@ class Settings(BaseSettings):
         return RAIZ / "data" / "chroma"
 
     @property
-    def ruta_bm25(self) -> Path:
-        return RAIZ / "data" / "bm25.pkl"
+    def dir_modelos(self) -> Path:
+        """Caché del modelo de embeddings. Dentro del repo, no en %TEMP%."""
+        return RAIZ / "data" / "modelos"
 
     @property
     def dir_alertas(self) -> Path:
@@ -104,6 +107,7 @@ class Settings(BaseSettings):
             self.dir_alertas,
             self.dir_uploads,
             self.dir_tts_cache,
+            self.dir_modelos,
             self.dir_logs,
         ):
             d.mkdir(parents=True, exist_ok=True)

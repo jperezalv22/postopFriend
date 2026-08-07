@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>postopFriend · salud de voz</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header>
+    <h1>postop<span>Friend</span></h1>
+    <nav>
+      <a href="/">Llamada</a>
+      <a href="/consola">Conocimiento</a>
+      <a href="/panel">Panel</a>
+      <a href="/salud-voz" class="activo">Salud de voz</a>
+    </nav>
+  </header>
+
+  <main style="grid-template-columns:1fr;max-width:760px">
+    <section>
+      <div class="tarjeta">
+        <h2>Prueba de la cadena de voz</h2>
+        <p style="margin-top:0;color:var(--tenue);font-size:14px">
+          Comprueba en diez segundos las cuatro piezas de las que depende la llamada.
+          Si algo falla aquí, el problema no está en el agente.
+        </p>
+        <button id="probar" class="primario">Probar micrófono, VAD, transcripción y voz</button>
+        <div id="resultados" style="margin-top:16px"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/vendor/ort.wasm.min.js"></script>
+  <script src="/static/vendor/vad.bundle.min.js"></script>
+  <script src="/static/js/audio.js"></script>
+  <script>
+    const salida = document.getElementById("resultados");
+
+    function linea(nombre, ok, detalle) {
+      const div = document.createElement("div");
+      div.className = "variable";
+      div.innerHTML = `<div><div class="nombre">${nombre}</div>
+        <div class="evidencia">${detalle || ""}</div></div>
+        <div class="valor" style="color:var(--${ok ? "verde" : "rojo"})">${ok ? "OK" : "FALLA"}</div>`;
+      salida.appendChild(div);
+    }
+
+    document.getElementById("probar").addEventListener("click", async () => {
+      salida.innerHTML = "";
+      const boton = document.getElementById("probar");
+      boton.disabled = true;
+
+      // 1. Requisitos del navegador
+      const seguro = window.isSecureContext || location.hostname === "localhost";
+      linea("Contexto seguro", seguro,
+        seguro ? location.origin : "getUserMedia exige https o localhost");
+      linea("MediaSource audio/mpeg",
+        typeof MediaSource !== "undefined" && MediaSource.isTypeSupported("audio/mpeg"),
+        "sin esto el audio no se reproduce en streaming, solo al final");
+
+      // 2. Micrófono
+      let flujo = null;
+      try {
+        flujo = await navigator.mediaDevices.getUserMedia({ audio: true });
+        linea("Micrófono", true, flujo.getAudioTracks()[0].label || "dispositivo por defecto");
+      } catch (e) {
+        linea("Micrófono", false, e.message);
+        boton.disabled = false;
+        return;
+      }
+
+      // 3. VAD desde /static/vendor (sin CDN)
+      try {
+        if (window.ort?.env?.wasm) {
+          window.ort.env.wasm.wasmPaths = "/static/vendor/";
+          window.ort.env.wasm.numThreads = 1;
+        }
+        const v = await window.vad.MicVAD.new({
+          baseAssetPath: "/static/vendor/", onnxWASMBasePath: "/static/vendor/",
+          model: "v5", onSpeechEnd: () => {},
+        });
+        v.destroy?.();
+        linea("Silero VAD (empaquetado, sin CDN)", true, "modelo v5 cargado desde /static/vendor/");
+      } catch (e) {
+        linea("Silero VAD", false, `${e.message} — la llamada caerá a «pulsar para hablar»`);
+      }
+
+      // 4. Servidor: TTS y modelos
+      try {
+        const r = await fetch("/health");
+        const s = await r.json();
+        linea("Servidor y clave de Groq", s.groq_configurado,
+          `LLM ${s.modelo_llm} · STT ${s.modelo_stt} · voz ${s.voz}`);
+        const c = s.conocimiento || {};
+        linea("Conocimiento indexado", (c.fragmentos || 0) > 0,
+          c.error || `${c.fragmentos} fragmentos de ${c.documentos} documentos`);
+      } catch (e) {
+        linea("Servidor", false, e.message);
+      }
+
+      flujo.getTracks().forEach((t) => t.stop());
+      boton.disabled = false;
+    });
+  </script>
+</body>
+</html>
