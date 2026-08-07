@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -24,8 +25,14 @@ from app.config import get_settings
 
 log = logging.getLogger("postopfriend.llm")
 
-REINTENTOS = 2
-ESPERA_BASE_S = 0.6
+REINTENTOS = 5
+ESPERA_BASE_S = 1.0
+ESPERA_MAXIMA_S = 30.0
+
+# Groq dice exactamente cuánto hay que esperar: «Please try again in 3.345s».
+# Adivinar con retroceso exponencial cuando el servidor ya dio el número es
+# desperdiciar cuota o esperar de más.
+_ESPERA_SUGERIDA = re.compile(r"try again in ([\d.]+)\s*(ms|s)\b", re.IGNORECASE)
 
 
 @dataclass
@@ -51,6 +58,17 @@ def _cliente():
 
 def _es_limite_de_cuota(e: Exception) -> bool:
     return "429" in str(e) or "rate_limit" in str(e).lower()
+
+
+def espera_sugerida(e: Exception, intento: int) -> float:
+    """Cuánto esperar antes de reintentar, según lo que diga el propio servidor."""
+    m = _ESPERA_SUGERIDA.search(str(e))
+    if m:
+        segundos = float(m.group(1))
+        if m.group(2).lower() == "ms":
+            segundos /= 1000.0
+        return min(segundos + 0.5, ESPERA_MAXIMA_S)  # margen para el reloj del servidor
+    return min(ESPERA_BASE_S * (2**intento), ESPERA_MAXIMA_S)
 
 
 def chat_sync(
@@ -91,9 +109,10 @@ def chat_sync(
         except Exception as e:
             ultimo_error = e
             if intento < REINTENTOS and _es_limite_de_cuota(e):
-                espera = ESPERA_BASE_S * (2**intento)
+                espera = espera_sugerida(e, intento)
                 incidencias.append("cuota_agotada_reintento")
-                log.warning("cuota de Groq agotada, reintento en %.1f s", espera)
+                log.warning("cuota de Groq agotada, reintento en %.1f s (intento %d/%d)",
+                            espera, intento + 1, REINTENTOS)
                 time.sleep(espera)
                 continue
             break
