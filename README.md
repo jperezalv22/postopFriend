@@ -13,9 +13,12 @@ Juan Pablo Pérez
 
 ---
 
-## ⚠️ Modelo declarado y cumplimiento de la compuerta G3
+## Modelo declarado y cumplimiento de la compuerta G3
 
 **Modelo del agente: `llama-3.3-70b-versatile` vía Groq.**
+**Confirmado por Source Meridian:** ante la consulta enviada por este participante,
+la organización respondió que se puede usar **la siguiente versión disponible** del
+modelo listado. Eso es exactamente este caso.
 
 El kit oficial lista cuatro modelos permitidos y nombra **Llama 3.1 70B (vía Groq)**.
 **Ese modelo ya no existe en la API de Groq.** No es una suposición: se comprueba
@@ -47,9 +50,11 @@ propio kit recomienda. Las tres alternativas restantes de la lista son locales o
 otro proveedor y ninguna entrega una conversación de voz fluida en la máquina del
 jurado sin descargas de gigabytes que harían fallar la compuerta G2.
 
-Se envió correo a Source Meridian pidiendo confirmación explícita. Toda la
-interacción con el modelo pasa por [app/agent/llm.py](app/agent/llm.py), de modo que
-cambiar de proveedor es un cambio contenido en ese archivo.
+Se consultó a Source Meridian antes de construir sobre esta decisión, y la
+organización confirmó que se admite la siguiente versión disponible del modelo
+listado. Aun así, toda la interacción con el modelo pasa por un solo archivo,
+[app/agent/llm.py](app/agent/llm.py): cambiar de modelo o de proveedor es un cambio
+contenido ahí y no una reescritura del agente.
 
 ---
 

@@ -1,0 +1,355 @@
+{
+  "fecha": "2026-08-07",
+  "moduladores": false,
+  "resumen": {
+    "n": 160,
+    "exactitud": 0.925,
+    "matriz": {
+      "verde": {
+        "verde": 111,
+        "amarillo": 12,
+        "rojo": 0
+      },
+      "amarillo": {
+        "verde": 0,
+        "amarillo": 25,
+        "rojo": 0
+      },
+      "rojo": {
+        "verde": 0,
+        "amarillo": 0,
+        "rojo": 12
+      }
+    },
+    "falsos_negativos": 0,
+    "rojos_perdidos": 0,
+    "sobre_escalados": 12,
+    "recall_verde": 0.9024,
+    "n_verde": 123,
+    "recall_amarillo": 1.0,
+    "n_amarillo": 25,
+    "recall_rojo": 1.0,
+    "n_rojo": 12
+  },
+  "fallos": [
+    {
+      "caso_id": "caso_tray_pac_42_00000_7",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_leve_vigilancia",
+      "dia_postop": 7,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "febricula",
+          "valor": 37.7,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00000_7",
+          "fuente_clinica": "Febrícula. No decide por sí sola, pero suma si hay otros signos."
+        },
+        {
+          "regla": "sueno_muy_alterado",
+          "valor": "muy_alterado",
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00000_7",
+          "fuente_clinica": "Marcador inespecífico de deterioro, frecuentemente por dolor nocturno."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00002_7",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_leve_vigilancia",
+      "dia_postop": 7,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "dolor_moderado",
+          "valor": 4,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00002_7",
+          "fuente_clinica": "Dolor moderado. Esperable en los primeros días, vigilar si persiste."
+        },
+        {
+          "regla": "sueno_muy_alterado",
+          "valor": "muy_alterado",
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00002_7",
+          "fuente_clinica": "Marcador inespecífico de deterioro, frecuentemente por dolor nocturno."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00012_1",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_leve_vigilancia",
+      "dia_postop": 1,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "febricula",
+          "valor": 37.5,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00012_1",
+          "fuente_clinica": "Febrícula. No decide por sí sola, pero suma si hay otros signos."
+        },
+        {
+          "regla": "dolor_moderado",
+          "valor": 4,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00012_1",
+          "fuente_clinica": "Dolor moderado. Esperable en los primeros días, vigilar si persiste."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00017_1",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_real",
+      "dia_postop": 1,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "dolor_moderado",
+          "valor": 4,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00017_1",
+          "fuente_clinica": "Dolor moderado. Esperable en los primeros días, vigilar si persiste."
+        },
+        {
+          "regla": "apetito_muy_bajo",
+          "valor": "muy_disminuido",
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00017_1",
+          "fuente_clinica": "Marcador inespecífico de deterioro. Solo suma acompañado."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00023_1",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "recuperacion_normal",
+      "dia_postop": 1,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "dolor_moderado",
+          "valor": 4,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00023_1",
+          "fuente_clinica": "Dolor moderado. Esperable en los primeros días, vigilar si persiste."
+        },
+        {
+          "regla": "herida_eritema",
+          "valor": "eritema_leve",
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00023_1",
+          "fuente_clinica": "Signo temprano de inflamación local. Vigilancia, no urgencia."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00026_3",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 3,
+      "arquetipo": "complicacion_real",
+      "dia_postop": 3,
+      "motivo": "score 3 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "febricula",
+          "valor": 37.6,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00026_3",
+          "fuente_clinica": "Febrícula. No decide por sí sola, pero suma si hay otros signos."
+        },
+        {
+          "regla": "dolor_moderado",
+          "valor": 4,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00026_3",
+          "fuente_clinica": "Dolor moderado. Esperable en los primeros días, vigilar si persiste."
+        },
+        {
+          "regla": "sueno_muy_alterado",
+          "valor": "muy_alterado",
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00026_3",
+          "fuente_clinica": "Marcador inespecífico de deterioro, frecuentemente por dolor nocturno."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00027_1",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_real",
+      "dia_postop": 1,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "febricula",
+          "valor": 37.5,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00027_1",
+          "fuente_clinica": "Febrícula. No decide por sí sola, pero suma si hay otros signos."
+        },
+        {
+          "regla": "apetito_muy_bajo",
+          "valor": "muy_disminuido",
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00027_1",
+          "fuente_clinica": "Marcador inespecífico de deterioro. Solo suma acompañado."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00030_1",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_real",
+      "dia_postop": 1,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "dolor_moderado",
+          "valor": 4,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00030_1",
+          "fuente_clinica": "Dolor moderado. Esperable en los primeros días, vigilar si persiste."
+        },
+        {
+          "regla": "apetito_muy_bajo",
+          "valor": "muy_disminuido",
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00030_1",
+          "fuente_clinica": "Marcador inespecífico de deterioro. Solo suma acompañado."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00035_1",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_leve_vigilancia",
+      "dia_postop": 1,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "febricula",
+          "valor": 37.6,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00035_1",
+          "fuente_clinica": "Febrícula. No decide por sí sola, pero suma si hay otros signos."
+        },
+        {
+          "regla": "dolor_moderado",
+          "valor": 4,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00035_1",
+          "fuente_clinica": "Dolor moderado. Esperable en los primeros días, vigilar si persiste."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00035_3",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_leve_vigilancia",
+      "dia_postop": 3,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "febricula",
+          "valor": 37.5,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00035_3",
+          "fuente_clinica": "Febrícula. No decide por sí sola, pero suma si hay otros signos."
+        },
+        {
+          "regla": "herida_eritema",
+          "valor": "eritema_leve",
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00035_3",
+          "fuente_clinica": "Signo temprano de inflamación local. Vigilancia, no urgencia."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00037_3",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_leve_vigilancia",
+      "dia_postop": 3,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "febricula",
+          "valor": 37.7,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00037_3",
+          "fuente_clinica": "Febrícula. No decide por sí sola, pero suma si hay otros signos."
+        },
+        {
+          "regla": "dolor_moderado",
+          "valor": 6,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00037_3",
+          "fuente_clinica": "Dolor moderado. Esperable en los primeros días, vigilar si persiste."
+        }
+      ]
+    },
+    {
+      "caso_id": "caso_tray_pac_42_00037_7",
+      "esperado": "verde",
+      "obtenido": "amarillo",
+      "score": 2,
+      "arquetipo": "complicacion_leve_vigilancia",
+      "dia_postop": 7,
+      "motivo": "score 2 en el rango 2-5",
+      "red_flags": [],
+      "desglose": [
+        {
+          "regla": "febricula",
+          "valor": 37.6,
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00037_7",
+          "fuente_clinica": "Febrícula. No decide por sí sola, pero suma si hay otros signos."
+        },
+        {
+          "regla": "sueno_muy_alterado",
+          "valor": "muy_alterado",
+          "puntos": 1,
+          "evidencia": "trayectoria tray_pac_42_00037_7",
+          "fuente_clinica": "Marcador inespecífico de deterioro, frecuentemente por dolor nocturno."
+        }
+      ]
+    }
+  ]
+}

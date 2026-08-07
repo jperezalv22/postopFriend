@@ -34,7 +34,18 @@ class Settings(BaseSettings):
     tts_rate: str = "+8%"
 
     # ─── Triage ──────────────────────────────────────────────────────────────
-    triage_moduladores: bool = True
+    # Apagados por defecto, y no por descuido. Medido sobre los 160 casos
+    # etiquetados (`python evals/run_engine_eval.py`):
+    #
+    #   sin moduladores   exactitud 92.5 %   recall rojo 100 %   12 sobre-escalados
+    #   con moduladores   exactitud 82.5 %   recall rojo 100 %   28 sobre-escalados
+    #
+    # No mejoran la sensibilidad —ya es del 100 % en rojo y amarillo— y multiplican
+    # por dos las falsas alarmas. La causa es que las etiquetas del dataset no tienen
+    # en cuenta la comorbilidad, así que sumar por diabetes solo desplaza verdes hacia
+    # amarillo. La regla clínica que codifican es real y se conserva implementada y
+    # documentada en rules.yaml; encenderla exige recalibrar el corte de rojo a 7.
+    triage_moduladores: bool = False
 
     # ─── RAG ─────────────────────────────────────────────────────────────────
     rag_top_k: int = 4

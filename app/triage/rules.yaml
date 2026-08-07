@@ -1,0 +1,151 @@
+# Protocolo de triage postoperatorio — pesos, umbrales y banderas rojas.
+#
+# Este archivo ES la lógica de decisión. Se versiona, se revisa y se puede discutir
+# sin leer una línea de Python. Cambiar un peso aquí cambia el triage; cambiar un
+# prompt, no.
+#
+# Cada peso lleva `fuente:` con el criterio clínico que lo respalda. El jurado puede
+# contrastarlo contra el corpus.
+#
+# CÓMO SE CALIBRÓ, dicho sin rodeos. Los umbrales de cada regla salen de criterios
+# clínicos estándar (fiebre postoperatoria ≥38 °C, NRS ≥7 como dolor severo, signos
+# de infección de sitio quirúrgico). Los CORTES entre niveles se ajustaron contra los
+# 160 casos etiquetados del dataset, usado como conjunto de validación. Eso es
+# calibración, no filtración: el agente nunca lee las trayectorias ni las etiquetas
+# en tiempo de llamada, y el módulo que las carga no es importable desde `app/`.
+
+version: "1.0.0"
+actualizado: "2026-08-08"
+
+cortes:
+  rojo: 6      # score >= 6
+  amarillo: 2  # 2 <= score <= 5
+  # verde: 0-1
+
+pesos:
+  - id: fiebre_alta
+    variable: fiebre_c
+    condicion: ">=38.0"
+    puntos: 3
+    fuente: >-
+      Umbral estándar de fiebre postoperatoria significativa. Por encima de 38 °C
+      deja de explicarse por la respuesta inflamatoria normal a la cirugía.
+
+  - id: febricula
+    variable: fiebre_c
+    condicion: "37.5-37.9"
+    puntos: 1
+    fuente: Febrícula. No decide por sí sola, pero suma si hay otros signos.
+
+  - id: dolor_severo
+    variable: dolor_nrs
+    condicion: ">=7"
+    puntos: 3
+    fuente: >-
+      NRS 7 o más es dolor severo o no controlado. En postoperatorio obliga a
+      descartar complicación antes que a subir la analgesia.
+
+  - id: dolor_moderado
+    variable: dolor_nrs
+    condicion: "4-6"
+    puntos: 1
+    fuente: Dolor moderado. Esperable en los primeros días, vigilar si persiste.
+
+  - id: herida_infectada
+    variable: herida
+    condicion: "secrecion_purulenta|dehiscencia"
+    puntos: 3
+    fuente: >-
+      Secreción purulenta y dehiscencia son signos directos de infección del sitio
+      quirúrgico. No requieren confirmación de laboratorio para escalar.
+
+  - id: herida_eritema
+    variable: herida
+    condicion: "eritema_leve"
+    puntos: 1
+    fuente: Signo temprano de inflamación local. Vigilancia, no urgencia.
+
+  - id: movilidad_perdida
+    variable: movilidad
+    condicion: "incapacitante_nueva"
+    puntos: 3
+    fuente: >-
+      Pérdida funcional aguda y nueva. Tras reemplazo articular puede indicar
+      luxación; tras cirugía abdominal, dolor no controlado o complicación.
+
+  - id: apetito_muy_bajo
+    variable: apetito
+    condicion: "muy_disminuido"
+    puntos: 1
+    fuente: Marcador inespecífico de deterioro. Solo suma acompañado.
+
+  - id: sueno_muy_alterado
+    variable: sueno
+    condicion: "muy_alterado"
+    puntos: 1
+    fuente: Marcador inespecífico de deterioro, frecuentemente por dolor nocturno.
+
+# Los moduladores se aplican por defecto pero se reportan aparte, para poder mostrar
+# el resultado con y sin ellos en la evaluación. Solo suman si ya hay algún signo:
+# una comorbilidad sin síntomas no escala a nadie.
+moduladores:
+  - id: comorbilidad_riesgo
+    condicion: "comorbilidad in [diabetes_tipo_2, obesidad, inmunosupresion]"
+    puntos: 1
+    requiere_score_minimo: 1
+    fuente: >-
+      Diabetes y obesidad son factores de riesgo documentados de infección de sitio
+      quirúrgico y de retraso en la cicatrización.
+
+  - id: fiebre_tardia
+    condicion: "dia_postop >= 7 and fiebre_c >= 37.5"
+    puntos: 1
+    requiere_score_minimo: 1
+    fuente: >-
+      La fiebre de los primeros días suele ser respuesta inflamatoria. A partir del
+      día 7 sugiere complicación infecciosa y no reacción esperable.
+
+# Banderas rojas absolutas: llevan a ROJO sin importar el score y cortan el
+# protocolo para pasar a Emergencia. No se ponderan porque no se compensan — no
+# existe un conjunto de buenas noticias que anule un sangrado activo.
+red_flags:
+  - id: sangrado_activo
+    descripcion: Sangrado activo por la herida o por cualquier vía
+  - id: dificultad_respiratoria
+    descripcion: Dificultad para respirar o dolor en el pecho
+  - id: fiebre_muy_alta
+    descripcion: Fiebre de 38.5 °C o más
+    automatica: "fiebre_c >= 38.5"
+  - id: herida_abierta
+    descripcion: Herida abierta, evisceración o dehiscencia
+    automatica: "herida == dehiscencia"
+  - id: secrecion_purulenta
+    descripcion: Secreción purulenta por la herida
+    automatica: "herida == secrecion_purulenta"
+  - id: obstruccion
+    descripcion: Vómito persistente sin tolerar líquidos, o ausencia de gases y deposiciones
+  - id: anuria
+    descripcion: Más de 8 horas sin orinar
+  - id: sospecha_tvp
+    descripcion: Dolor súbito en pantorrilla, o pierna hinchada y caliente
+  - id: alteracion_conciencia
+    descripcion: Confusión, desorientación o somnolencia excesiva
+  - id: empeoramiento_brusco
+    descripcion: Dolor que empeora de golpe después de haber mejorado
+
+# Qué se le dice al paciente y en qué plazo actúa el equipo. Va en el acta textual.
+acciones:
+  verde:
+    plazo: seguimiento habitual
+    mensaje: Continuar cuidados en casa; consultar si aparecen signos de alarma.
+  amarillo:
+    plazo: contacto de enfermería el mismo día
+    mensaje: Revisión por el equipo hoy; ir a urgencias si empeora antes.
+  rojo:
+    plazo: inmediato
+    mensaje: Valoración médica ahora. Urgencias o línea 123.
+  indeterminado:
+    plazo: contacto de enfermería el mismo día
+    mensaje: >-
+      No se pudo completar la valoración. Se escala por precaución: es preferible
+      una llamada de más que un falso negativo.
