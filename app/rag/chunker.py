@@ -112,6 +112,20 @@ def _agrupar(oraciones: Iterable[str]) -> list[str]:
     return bloques
 
 
+def sin_cabecera(texto: str) -> str:
+    """Devuelve el fragmento sin su cabecera de contexto.
+
+    El texto crudo no se guarda aparte: sería la misma información en dos sitios
+    (7.5 MB duplicados sobre el corpus completo) y dos sitios que pueden discrepar.
+    La cabecera siempre es la primera línea entre corchetes, así que se deriva.
+    """
+    if texto.startswith("[") and "\n" in texto:
+        primera, resto = texto.split("\n", 1)
+        if primera.endswith("]"):
+            return resto
+    return texto
+
+
 def cabecera(procedimiento: str, titulo: str, pagina: int) -> str:
     tema = procedimiento if procedimiento and procedimiento != "general" else "Guía clínica"
     titulo_corto = titulo if len(titulo) <= 90 else titulo[:87].rstrip() + "…"

@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.config import get_settings
-from app.rag import embedder, store
+from app.rag import chunker, embedder, store
 
 log = logging.getLogger("postopfriend.rag")
 
@@ -37,10 +37,12 @@ K_RRF = 60          # constante estándar de RRF; amortigua el peso de los prime
 BOOST_PROCEDIMIENTO = 0.15
 BOOST_SUBIDO = 0.10
 
-# Escape léxico de la abstención: un BM25 alto significa que el término clínico
-# exacto está en el corpus, aunque el modelo denso pequeño no capte la relación.
-# Se calibra junto con `RAG_SCORE_MIN` en evals/run_rag_eval.py.
-UMBRAL_LEXICO = 6.0
+# Cobertura de término: si una palabra larga y específica de la pregunta no aparece
+# NI UNA VEZ en los 9 512 fragmentos, el corpus no trata de ese tema. Se exige
+# ausencia total (df = 0) y raíz larga, porque el precio de un falso positivo es
+# que el agente diga «no lo tengo en mis guías» sobre algo que sí tiene.
+DF_MINIMO = 0
+LARGO_RAIZ_ESPECIFICA = 6
 
 # Jerga colombiana → término que sí aparece escrito en las guías clínicas.
 # El paciente dice «me sale materia»; el corpus dice «secreción purulenta».
@@ -124,7 +126,8 @@ class Resultado:
     abstiene: bool = False
     motivo: str = ""
     kb_version: int = 0
-    relevancia: float = 0.0  # coseno del mejor candidato: es lo que decide la abstención
+    relevancia: float = 0.0  # coseno del mejor candidato
+    termino_ausente: str | None = None  # palabra de la pregunta que el corpus no tiene
 
     def como_dict(self) -> dict[str, Any]:
         return {
@@ -132,6 +135,7 @@ class Resultado:
             "consulta_expandida": self.consulta_expandida,
             "abstiene": self.abstiene,
             "motivo": self.motivo,
+            "termino_ausente": self.termino_ausente,
             "relevancia": round(self.relevancia, 4),
             "kb_version": self.kb_version,
             "citas": [c.como_dict() for c in self.citas],
@@ -143,6 +147,29 @@ def expandir(consulta: str) -> str:
     plano = consulta.lower()
     extras = [clinico for jerga, clinico in EXPANSIONES.items() if jerga in plano]
     return f"{consulta} {' '.join(extras)}".strip() if extras else consulta
+
+
+def termino_ausente(consulta: str, idx) -> str | None:
+    """El término específico de la pregunta que el corpus no contiene, si lo hay.
+
+    Responde a una pregunta que la similitud vectorial no sabe contestar: **¿este
+    corpus habla siquiera del tema?** Un embedding siempre devuelve el vecino más
+    cercano, y sobre 9 512 fragmentos el vecino más cercano de cualquier cosa se
+    parece un poco. La frecuencia documental sí lo sabe: «mastectomía» aparece en
+    0 fragmentos de los 107 documentos del kit, porque la carpeta `breast_cancer`
+    resultó ser de cáncer de cuello uterino.
+
+    Solo se miran palabras largas y específicas. Las de la jerga colombiana se
+    excluyen: es normal que «chuzón» no aparezca en una guía clínica, y para eso
+    está la expansión de consulta.
+    """
+    jerga = {store.lematizar(t) for frase in EXPANSIONES for t in frase.split()}
+    for raiz in store.tokenizar(consulta):
+        if len(raiz) < LARGO_RAIZ_ESPECIFICA or raiz in jerga:
+            continue
+        if idx.frecuencia(raiz) <= DF_MINIMO:
+            return raiz
+    return None
 
 
 def _rrf(puesto: int) -> float:
@@ -277,7 +304,7 @@ def recuperar(
                 archivo=str(meta.get("archivo", "")),
                 pagina=int(meta.get("pagina", 1) or 1),
                 texto=datos["texto"],
-                texto_crudo=str(meta.get("texto_crudo") or datos["texto"]),
+                texto_crudo=chunker.sin_cabecera(datos["texto"]),
                 procedimiento=str(meta.get("procedimiento", "general")),
                 idioma=str(meta.get("idioma", "es")),
                 origen=str(meta.get("origen", "base")),
@@ -307,17 +334,27 @@ def recuperar(
     # acierto puramente léxico: un término clínico exacto con BM25 alto es una
     # coincidencia buena aunque el modelo pequeño no la vea.
     resultado.relevancia = max((c.score_denso for c in resultado.citas), default=0.0)
-    mejor_lexico = max((c.score_lexico for c in resultado.citas), default=0.0)
 
     if not resultado.citas:
         resultado.abstiene = True
         resultado.motivo = "sin candidatos"
-    elif resultado.relevancia < umbral and mejor_lexico < UMBRAL_LEXICO:
+        return resultado
+
+    # Prueba de cobertura, antes que el umbral. Un umbral de similitud no distingue
+    # «no encontré nada parecido» de «el corpus no habla de esto», y sobre 9 512
+    # fragmentos siempre hay algo vagamente parecido: «¿cómo se cuida el drenaje
+    # después de la mastectomía?» recuperaba un documento de colecistectomía con
+    # similitud 0.68, más alta que preguntas que el corpus sí cubre.
+    ausente = termino_ausente(consulta, idx)
+    if ausente:
         resultado.abstiene = True
-        resultado.motivo = (
-            f"relevancia máxima {resultado.relevancia:.3f} (umbral {umbral:.3f}) "
-            f"y BM25 máximo {mejor_lexico:.1f} (umbral {UMBRAL_LEXICO:.1f})"
-        )
+        resultado.termino_ausente = ausente
+        resultado.motivo = f"«{ausente}» no aparece en el corpus indexado"
+        return resultado
+
+    if resultado.relevancia < umbral:
+        resultado.abstiene = True
+        resultado.motivo = f"relevancia máxima {resultado.relevancia:.3f}, por debajo del umbral {umbral:.3f}"
     return resultado
 
 

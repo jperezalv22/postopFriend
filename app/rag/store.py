@@ -18,7 +18,7 @@ import logging
 import re
 import threading
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any
 
@@ -41,14 +41,40 @@ _VACIAS = {
 }
 
 
+# Sufijos del español, de más largo a más corto. Es un lematizador conservador,
+# no un Snowball completo: solo recorta lo suficiente para que la guía clínica y el
+# paciente compartan token. El corpus escribe «cuidados de la herida» y el paciente
+# dice «cómo se cuida la herida»; sin esto, para BM25 no tienen nada en común.
+_SUFIJOS = (
+    "amientos", "imientos", "amiento", "imiento", "aciones", "adores", "adoras",
+    "idades", "aremos", "eremos", "iremos", "abamos", "ariamos",
+    "acion", "ancia", "encia", "mente", "ables", "ibles", "istas", "antes",
+    "ientes", "ando", "iendo", "aron", "ieron", "aban", "ados", "idos", "adas",
+    "idas", "itos", "itas", "able", "ible", "ista", "ante", "ente",
+    "ado", "ido", "ada", "ida", "aba", "ito", "ita", "oso", "osa", "ivo", "iva",
+    "dad", "ar", "er", "ir", "os", "as", "es", "an", "en", "ia", "a", "o", "s",
+)
+LARGO_MINIMO_RAIZ = 3  # con 4, «sacaron» no llegaba a «sac» y no casaba con «sacar»
+
+
+def lematizar(token: str) -> str:
+    """Recorta el sufijo más largo que deje una raíz de al menos 4 caracteres."""
+    for sufijo in _SUFIJOS:
+        if token.endswith(sufijo) and len(token) - len(sufijo) >= LARGO_MINIMO_RAIZ:
+            return token[: -len(sufijo)]
+    return token
+
+
 def tokenizar(texto: str) -> list[str]:
-    """Minúsculas sin tildes, palabras de 2+ caracteres, sin vacías.
+    """Minúsculas sin tildes, sin vacías, lematizadas.
 
     Sin tildes a propósito: el corpus escribe «apendicectomía» y el STT a veces
-    devuelve «apendicectomia». Deben ser el mismo token.
+    devuelve «apendicectomia». Tienen que ser el mismo token.
     """
     plano = unicodedata.normalize("NFKD", texto.lower()).encode("ascii", "ignore").decode()
-    return [t for t in re.findall(r"[a-z0-9]{2,}", plano) if t not in _VACIAS]
+    return [
+        lematizar(t) for t in re.findall(r"[a-z0-9]{2,}", plano) if t not in _VACIAS
+    ]
 
 
 # ─── ChromaDB ────────────────────────────────────────────────────────────────
@@ -117,9 +143,11 @@ def agregar_fragmentos(
             ids=[f.chunk_id for f in trozo],
             embeddings=vectores[i : i + TAM],
             documents=[f.texto for f in trozo],
+            # `texto_crudo` no va en la metadata: se deriva del documento quitando
+            # la cabecera (ver chunker.sin_cabecera). Guardarlo sería duplicar el
+            # texto del corpus entero en la base.
             metadatas=[
-                {**base, "pagina": f.pagina, "chunk_idx": f.chunk_idx, "texto_crudo": f.texto_crudo}
-                for f in trozo
+                {**base, "pagina": f.pagina, "chunk_idx": f.chunk_idx} for f in trozo
             ],
         )
     return len(fragmentos)
@@ -156,6 +184,10 @@ class IndiceLexico:
     textos: list[str]
     metadatas: list[dict[str, Any]]
     bm25: Any
+    df: dict[str, int] = field(default_factory=dict)  # en cuántos fragmentos aparece cada término
+
+    def frecuencia(self, termino: str) -> int:
+        return self.df.get(termino, 0)
 
     def buscar(self, consulta: str, top: int) -> list[tuple[str, float]]:
         if not self.ids:
@@ -189,8 +221,17 @@ def indice_lexico() -> IndiceLexico:
         # BM25Okapi revienta con un corpus vacío: se deja un documento centinela.
         bm25 = BM25Okapi(corpus if corpus else [["__vacio__"]])
 
-        log.info("índice BM25 reconstruido: %d fragmentos (kb_version=%d)", len(ids), version)
-        _indice = IndiceLexico(version, ids, textos, metadatas, bm25)
+        # Frecuencia documental por término. Con ella el buscador puede responder
+        # «esta palabra no está en el corpus», que es distinto de «no encontré nada
+        # parecido» y es lo que permite declarar un límite en vez de improvisar.
+        df: dict[str, int] = {}
+        for tokens in corpus:
+            for t in set(tokens):
+                df[t] = df.get(t, 0) + 1
+
+        log.info("índice BM25 reconstruido: %d fragmentos, %d términos (kb_version=%d)",
+                 len(ids), len(df), version)
+        _indice = IndiceLexico(version, ids, textos, metadatas, bm25, df)
         return _indice
 
 
@@ -199,6 +240,33 @@ def invalidar_indice() -> None:
     global _indice
     with _candado:
         _indice = None
+
+
+def compactar() -> dict[str, int]:
+    """Purga el registro de escrituras de Chroma y compacta el archivo.
+
+    Chroma conserva en `embeddings_queue` un log de todo lo insertado. Tras una
+    reconstrucción completa son 8 MB de datos ya aplicados que se irían al repo y
+    que el jurado tendría que clonar sin necesidad. Se corre solo al final de
+    `build_index.py`, nunca con el servidor arriba.
+    """
+    import sqlite3
+
+    ruta = get_settings().dir_chroma / "chroma.sqlite3"
+    if not ruta.exists():
+        return {"antes_mb": 0, "despues_mb": 0}
+
+    antes = ruta.stat().st_size
+    _cliente.cache_clear()  # cierra el cliente antes de tocar el archivo por debajo
+    con = sqlite3.connect(ruta)
+    try:
+        con.execute("DELETE FROM embeddings_queue")
+        con.commit()
+        con.execute("VACUUM")
+    finally:
+        con.close()
+    despues = ruta.stat().st_size
+    return {"antes_mb": round(antes / 1e6), "despues_mb": round(despues / 1e6)}
 
 
 def estado() -> dict[str, Any]:
