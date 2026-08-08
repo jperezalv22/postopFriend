@@ -19,10 +19,31 @@ class Settings(BaseSettings):
 
     # ─── Credenciales ────────────────────────────────────────────────────────
     groq_api_key: str = ""
+    # Solo para `evals/`. Ver `llm_backend` más abajo; la llamada al paciente
+    # nunca pasa por aquí.
+    openrouter_api_key: str = ""
 
     # ─── Modelos ─────────────────────────────────────────────────────────────
     # G3: ver la sección "Cumplimiento G3" del README antes de cambiar esto.
     llm_model: str = "llama-3.3-70b-versatile"
+
+    # Por dónde se llega al modelo. `groq` es la ruta de producción y el valor por
+    # defecto: si el jurado clona el repo y pone su clave de Groq, todo funciona sin
+    # tocar nada.
+    #
+    # `openrouter` existe por una razón concreta y acotada. El nivel gratuito de Groq
+    # tiene un tope de 100 000 tokens por día que se repone gota a gota (~4 167/hora,
+    # medido con `scripts/cuota_groq.py`), y la evaluación del sistema completo
+    # necesita ~896 000: nueve días. El Dev Tier de Groq, que resolvería esto por
+    # menos de un dólar, estaba cerrado a nuevas altas el 7 de agosto de 2026.
+    #
+    # OpenRouter revende **la inferencia de Groq** —mismo modelo, mismo proveedor, y
+    # los mismos precios de app/obs/tokens.py— y sí acepta tarjeta. Se usa fijado a
+    # Groq sin sustitutos, y `app/agent/llm.py` **comprueba en la respuesta** que el
+    # proveedor haya sido Groq: una cifra medida contra otro backend no describiría
+    # el sistema que se entrega.
+    llm_backend: str = "groq"
+    openrouter_model: str = "meta-llama/llama-3.3-70b-instruct"
     stt_model: str = "whisper-large-v3-turbo"
     # Ver app/rag/embedder.py: e5-small no existe en fastembed; este es el
     # multilingüe más liviano del catálogo (384 dim, ~220 MB).
