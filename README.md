@@ -93,7 +93,7 @@ Abra **http://127.0.0.1:8000**.
 | Modelo de embeddings (`setup` lo baja por adelantado) | ~220 MB | 1–2 min |
 | **Total** | **~650 MB** | **3–8 min** |
 
-El índice RAG **viene construido en el repo**. Reconstruirlo tarda 14 minutos y no
+El índice RAG **viene construido en el repo**. Reconstruirlo tarda 7 minutos y no
 hace falta: el jurado no debería gastar en eso su ventana de 15 minutos.
 
 ### Verificar que todo está bien antes de empezar
@@ -109,8 +109,6 @@ falla, dice qué comando lo arregla.
 ---
 
 ## Cómo probar cada compuerta en dos minutos
-
-*(en construcción: el guion completo para el jurado llega con la entrega final)*
 
 | Compuerta | Cómo se prueba hoy |
 |---|---|
@@ -147,7 +145,7 @@ Decisiones que vale la pena conocer antes de leer el código:
 
 - **El LLM no decide el nivel de triage.** Extrae variables clínicas a JSON; un motor
   determinista y versionado calcula el nivel. Reproducible, auditable y testeable sin
-  gastar API. *(el motor llega en el bloque del sábado)*
+  gastar API: 161 pruebas corren en 10 segundos sin tocar la red.
 - **La latencia se mide en el reloj del navegador**, de punta a punta: desde que el VAD
   detecta que el paciente calló hasta el evento `playing` del elemento de audio.
   Medirla en el servidor descontaría el viaje de red y el arranque del audio.
@@ -157,9 +155,12 @@ Decisiones que vale la pena conocer antes de leer el código:
 - **El índice léxico BM25 se deriva de ChromaDB en memoria**, no se guarda en disco. Un
   archivo aparte es un segundo sitio donde puede sobrevivir un documento borrado, que es
   exactamente cómo se falla G5.
-- **La abstención no usa el puntaje de fusión.** RRF solo mira el puesto en la lista y le
-  da 0.650 tanto a una pregunta cubierta como a «¿quién ganó el mundial?». Decide la
-  similitud absoluta del mejor fragmento, que sí separa: 0.43–0.51 frente a 0.14–0.21.
+- **La abstención se decide por cobertura de término, no por similitud.** RRF solo mira
+  el puesto y da 0.650 tanto a una pregunta cubierta como a «¿quién ganó el mundial?».
+  El coseno tampoco basta: sobre 9 512 fragmentos siempre hay algo parecido, y una
+  pregunta de mastectomía sacaba un documento de colecistectomía con 0.68. Lo que sí
+  discrimina es si una palabra específica de la pregunta aparece alguna vez en el
+  índice: `mastectom` aparece **0 veces** en los 107 documentos.
 
 Diagrama completo y tabla de correspondencia caja → archivo: *(pendiente,
 `docs/arquitectura.md`)*
