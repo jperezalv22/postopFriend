@@ -63,6 +63,17 @@ EXPANSIONES = {
     "me late": "dolor pulsátil",
     "ardor": "dolor quemante",
     "maluco": "malestar general",
+    # La familia de «hinchar» entra completa y no solo en su forma de diccionario.
+    # El lematizador de store.py no recorta la «e» final, así que «hinche» queda como
+    # raíz propia con df = 0 y `termino_ausente` concluía que el corpus no habla de
+    # hinchazón — sobre una pregunta de trombosis, que es de las que no se pueden
+    # dejar sin responder. Lo detectó `evals/run_rag_eval.py` (caso rag_art_04).
+    # Se arregla aquí y no ampliando los sufijos del lematizador porque eso
+    # cambiaría la tokenización de los 9 512 fragmentos y obligaría a reindexar.
+    "hinche": "edema hinchazón inflamación",
+    "hincha": "edema hinchazón inflamación",
+    "hinchado": "edema hinchazón",
+    "hinchazon": "edema",
     "flojera": "astenia debilidad",
     "no he podido obrar": "estreñimiento ausencia de deposiciones",
     "obrar": "deposición evacuación intestinal",

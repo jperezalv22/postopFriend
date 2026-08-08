@@ -1,0 +1,1024 @@
+{
+  "fecha": "2026-08-08",
+  "top_k": 4,
+  "resumen": {
+    "n_con_respuesta": 25,
+    "n_sin_respuesta": 8,
+    "hit_at_k": 0.96,
+    "mrr": 0.7333,
+    "citas_verificables": 1.0,
+    "fuente_del_procedimiento": 0.76,
+    "abstencion_correcta": 1.0,
+    "abstenciones_por_capa": {
+      "router": 7,
+      "retriever": 1
+    }
+  },
+  "detalles": [
+    {
+      "id": "rag_ape_01",
+      "pregunta": "¿Cómo sé si la herida se me infectó?",
+      "tipo": "respuesta",
+      "acierta": false,
+      "puesto": null,
+      "abstuvo": false,
+      "relevancia": 0.4705,
+      "procedimiento_esperado": "Apendicectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 20,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9449
+        },
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 39,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.8957
+        },
+        {
+          "titulo": "Apendicitis aguda perforada secundaria a cuerpo extraño- reporte de ca",
+          "pagina": 5,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6418
+        },
+        {
+          "titulo": "FACTORES ASOCIADOS A LA INCIDENCIA DE APENDICITIS AGUDA COMPLICADA EN ",
+          "pagina": 9,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6339
+        }
+      ]
+    },
+    {
+      "id": "rag_ape_02",
+      "pregunta": "¿Cuánta fiebre ya es preocupante después de la operación?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 4,
+      "abstuvo": false,
+      "relevancia": 0.6374,
+      "procedimiento_esperado": "Apendicectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 24,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9478
+        },
+        {
+          "titulo": "Appendicitis- Integrating evidence-based nursing care into clinical pr",
+          "pagina": 7,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6188
+        },
+        {
+          "titulo": "Apendicitis",
+          "pagina": 10,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6418
+        },
+        {
+          "titulo": "diagnóstico, tratamiento y seguimiento del paciente adulto con apendic",
+          "pagina": 33,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6115
+        }
+      ]
+    },
+    {
+      "id": "rag_ape_03",
+      "pregunta": "¿Qué cuidados le doy a la herida en la casa?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 2,
+      "abstuvo": false,
+      "relevancia": 0.5615,
+      "procedimiento_esperado": "Apendicectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 35,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.8831
+        },
+        {
+          "titulo": "PLAN DE CUIDADO EN CASA DE PACIENTE EN POSTOPERATORIO DE APENDICECTOMÍ",
+          "pagina": 1,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6339
+        },
+        {
+          "titulo": "diagnóstico, tratamiento y seguimiento del paciente adulto con apendic",
+          "pagina": 72,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6115
+        },
+        {
+          "titulo": "Recom endaciones Programa Reemplazo Articular de Rodilla",
+          "pagina": 5,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "id": "rag_ape_04",
+      "pregunta": "¿Es normal que me duela el vientre todavía?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 4,
+      "abstuvo": false,
+      "relevancia": 0.4893,
+      "procedimiento_esperado": "Apendicectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Acute Care Surgery Comprehensive Recovery Guide - Appendix Surgery (Ap",
+          "pagina": 2,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6418
+        },
+        {
+          "titulo": "Identificación de microorganismos intrabdominales asociados a colecció",
+          "pagina": 5,
+          "procedimiento": "Apendicectomía",
+          "score": 0.5978
+        },
+        {
+          "titulo": "FACTORES ASOCIADOS A LA INCIDENCIA DE APENDICITIS AGUDA COMPLICADA EN ",
+          "pagina": 9,
+          "procedimiento": "Apendicectomía",
+          "score": 0.5848
+        },
+        {
+          "titulo": "cervix16nov-full",
+          "pagina": 37,
+          "procedimiento": "general",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "id": "rag_ape_05",
+      "pregunta": "¿Cuándo tengo que volver a urgencias?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.5045,
+      "procedimiento_esperado": "Apendicectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 25,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9478
+        },
+        {
+          "titulo": "Establishing the need for clinical follow-up after emergency appendice",
+          "pagina": 2,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6418
+        },
+        {
+          "titulo": "Acute Care Surgery Comprehensive Recovery Guide - Appendix Surgery (Ap",
+          "pagina": 2,
+          "procedimiento": "Apendicectomía",
+          "score": 0.6262
+        },
+        {
+          "titulo": "Recom endaciones Programa Reemplazo Articular de Rodilla",
+          "pagina": 11,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.4688
+        }
+      ]
+    },
+    {
+      "id": "rag_col_01",
+      "pregunta": "¿Qué puedo comer estos días después de que me sacaron la vesícula?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.5439,
+      "procedimiento_esperado": "Colecistectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 10,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9286
+        },
+        {
+          "titulo": "Estándar Clínico Basado en la Evidencia- Diagnóstico y tratamiento del",
+          "pagina": 15,
+          "procedimiento": "Colecistectomía",
+          "score": 0.65
+        },
+        {
+          "titulo": "PLAN DE CUIDADO COLECISTECTOMIA",
+          "pagina": 5,
+          "procedimiento": "Colecistectomía",
+          "score": 0.6418
+        },
+        {
+          "titulo": "Colelitiasis y colecistitis aguda",
+          "pagina": 6,
+          "procedimiento": "Colecistectomía",
+          "score": 0.6115
+        }
+      ]
+    },
+    {
+      "id": "rag_col_02",
+      "pregunta": "¿Es normal que me duela el hombro después de la laparoscopia?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.694,
+      "procedimiento_esperado": "Colecistectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Postoperative care for patients undergoing cholecystectomy- A comprehe",
+          "pagina": 3,
+          "procedimiento": "Colecistectomía",
+          "score": 0.65
+        },
+        {
+          "titulo": "Post-cholecystectomy syndrome in patients undergoing laparoscopic chol",
+          "pagina": 3,
+          "procedimiento": "Colecistectomía",
+          "score": 0.6339
+        },
+        {
+          "titulo": "Estándar Clínico Basado en la Evidencia- Diagnóstico y tratamiento del",
+          "pagina": 19,
+          "procedimiento": "Colecistectomía",
+          "score": 0.6262
+        },
+        {
+          "titulo": "Risk Factors Associated with Post-Cholecystectomy Syndrome and Insight",
+          "pagina": 5,
+          "procedimiento": "Colecistectomía",
+          "score": 0.6045
+        }
+      ]
+    },
+    {
+      "id": "rag_col_03",
+      "pregunta": "¿Qué hago si la herida me está botando pus?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.5529,
+      "procedimiento_esperado": "Colecistectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 39,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9545
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 20,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9463
+        },
+        {
+          "titulo": "CUIDADO ESTANDARIZADO EN EL PACIENTE QUIRURGICO CON ALTERACIONES EN LA",
+          "pagina": 25,
+          "procedimiento": "Colecistectomía",
+          "score": 0.6339
+        },
+        {
+          "titulo": "PLAN DE CUIDADO COLECISTECTOMIA",
+          "pagina": 4,
+          "procedimiento": "Colecistectomía",
+          "score": 0.5978
+        }
+      ]
+    },
+    {
+      "id": "rag_col_04",
+      "pregunta": "¿Se me puede poner la piel amarilla después de esta cirugía?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.5581,
+      "procedimiento_esperado": "Colecistectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Diagnóstico y tratamiento del paciente con colecistitis aguda calculos",
+          "pagina": 54,
+          "procedimiento": "Colecistectomía",
+          "score": 0.5848
+        },
+        {
+          "titulo": "Artroplastia total de rodilla- vías de abordaje pararrotuliana medial ",
+          "pagina": 8,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.4918
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 25,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.5
+        },
+        {
+          "titulo": "Analyzing postoperative complications in colorectal cancer surgery- a ",
+          "pagina": 7,
+          "procedimiento": "Colectomía",
+          "score": 0.4615
+        }
+      ]
+    },
+    {
+      "id": "rag_col_05",
+      "pregunta": "¿Cuándo puedo hacer fuerza otra vez?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 2,
+      "abstuvo": false,
+      "relevancia": 0.4696,
+      "procedimiento_esperado": "Colecistectomía",
+      "procedimiento_en_top4": false,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 25,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9836
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 25,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9615
+        },
+        {
+          "titulo": "Recom endaciones Programa Reemplazo Articular de Rodilla",
+          "pagina": 7,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.5
+        },
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 35,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.4839
+        }
+      ]
+    },
+    {
+      "id": "rag_cec_01",
+      "pregunta": "¿Cuándo voy a volver a obrar normal después de la cirugía del colon?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 3,
+      "abstuvo": false,
+      "relevancia": 0.7306,
+      "procedimiento_esperado": "Colectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "A Guide to Enhancing Your Recovery After Bowel Surgery (ERAS)",
+          "pagina": 5,
+          "procedimiento": "Colectomía",
+          "score": 0.65
+        },
+        {
+          "titulo": "A Review of Postoperative Complications in Colon Cancer Surgery The Ne",
+          "pagina": 6,
+          "procedimiento": "Colectomía",
+          "score": 0.6418
+        },
+        {
+          "titulo": "Determinación de los factores predictivos para complicaciones en cirug",
+          "pagina": 8,
+          "procedimiento": "Colectomía",
+          "score": 0.6115
+        },
+        {
+          "titulo": "Protocolo de recuperación mejorada después de cirugía (ERAS) atenúa el",
+          "pagina": 8,
+          "procedimiento": "Colectomía",
+          "score": 0.5848
+        }
+      ]
+    },
+    {
+      "id": "rag_cec_02",
+      "pregunta": "¿Qué es eso de la recuperación acelerada que me nombraron?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.585,
+      "procedimiento_esperado": "Colectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Protocolo de recuperación mejorada después de cirugía (ERAS) atenúa el",
+          "pagina": 3,
+          "procedimiento": "Colectomía",
+          "score": 1.0807
+        },
+        {
+          "titulo": "Efecto de la implementación de las recomendaciones del protocolo de re",
+          "pagina": 5,
+          "procedimiento": "Colectomía",
+          "score": 0.6262
+        },
+        {
+          "titulo": "Recovery and the use of postoperative physical therapy after total hip",
+          "pagina": 1,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.4918
+        },
+        {
+          "titulo": "FACTORES ASOCIADOS A LA INCIDENCIA DE APENDICITIS AGUDA COMPLICADA EN ",
+          "pagina": 10,
+          "procedimiento": "Apendicectomía",
+          "score": 0.4839
+        }
+      ]
+    },
+    {
+      "id": "rag_cec_03",
+      "pregunta": "¿Qué complicaciones puede haber después de una cirugía de colon?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 2,
+      "abstuvo": false,
+      "relevancia": 0.806,
+      "procedimiento_esperado": "Colectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "The clinical impacts of postoperative complications after colon cancer",
+          "pagina": 3,
+          "procedimiento": "Colectomía",
+          "score": 0.65
+        },
+        {
+          "titulo": "Determinación de los factores predictivos para complicaciones en cirug",
+          "pagina": 6,
+          "procedimiento": "Colectomía",
+          "score": 0.65
+        },
+        {
+          "titulo": "A Review of Postoperative Complications in Colon Cancer Surgery The Ne",
+          "pagina": 7,
+          "procedimiento": "Colectomía",
+          "score": 0.6115
+        },
+        {
+          "titulo": "Protocolo de recuperación mejorada después de cirugía (ERAS) atenúa el",
+          "pagina": 5,
+          "procedimiento": "Colectomía",
+          "score": 0.6115
+        }
+      ]
+    },
+    {
+      "id": "rag_cec_04",
+      "pregunta": "¿Cuándo puedo volver a trabajar?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 4,
+      "abstuvo": false,
+      "relevancia": 0.4039,
+      "procedimiento_esperado": "Colectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 25,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9687
+        },
+        {
+          "titulo": "A Guide to Enhancing Your Recovery After Bowel Surgery (ERAS)",
+          "pagina": 6,
+          "procedimiento": "Colectomía",
+          "score": 0.6418
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 25,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9533
+        },
+        {
+          "titulo": "Diagnóstico, estadificación, tratamiento y seguimiento del paciente ad",
+          "pagina": 44,
+          "procedimiento": "Colectomía",
+          "score": 0.5912
+        }
+      ]
+    },
+    {
+      "id": "rag_cec_05",
+      "pregunta": "¿Qué dieta debo llevar después de la operación del intestino?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 2,
+      "abstuvo": false,
+      "relevancia": 0.6808,
+      "procedimiento_esperado": "Colectomía",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "A Guide to Enhancing Your Recovery After Bowel Surgery (ERAS)",
+          "pagina": 6,
+          "procedimiento": "Colectomía",
+          "score": 0.6339
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 10,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.5
+        },
+        {
+          "titulo": "Postoperative care for patients undergoing cholecystectomy- A comprehe",
+          "pagina": 4,
+          "procedimiento": "Colecistectomía",
+          "score": 0.4918
+        },
+        {
+          "titulo": "Postcholecystectomy syndrome - management and treatment",
+          "pagina": 5,
+          "procedimiento": "Colecistectomía",
+          "score": 0.4918
+        }
+      ]
+    },
+    {
+      "id": "rag_art_01",
+      "pregunta": "¿Cuándo me puedo bañar después de la cirugía?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.5411,
+      "procedimiento_esperado": "Reemplazo de cadera/rodilla",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 17,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.1033
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 20,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.0487
+        },
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 38,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.6188
+        },
+        {
+          "titulo": "Recom endaciones Programa Reemplazo Articular de Rodilla",
+          "pagina": 5,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.6045
+        }
+      ]
+    },
+    {
+      "id": "rag_art_02",
+      "pregunta": "¿Puedo caminar o me toca hacer reposo?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.5641,
+      "procedimiento_esperado": "Reemplazo de cadera/rodilla",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 25,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.1262
+        },
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 28,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.0766
+        },
+        {
+          "titulo": "Recom endaciones Programa Reemplazo Articular de Rodilla",
+          "pagina": 5,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.0816
+        },
+        {
+          "titulo": "PLAN DE CUIDADO EN CASA DE PACIENTE EN POSTOPERATORIO DE APENDICECTOMÍ",
+          "pagina": 1,
+          "procedimiento": "Apendicectomía",
+          "score": 0.9463
+        }
+      ]
+    },
+    {
+      "id": "rag_art_03",
+      "pregunta": "¿Qué ejercicios tengo que hacer para la rodilla?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.6989,
+      "procedimiento_esperado": "Reemplazo de cadera/rodilla",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "PLAN CASERO REEMPLAZO TOTAL DE RODILLA",
+          "pagina": 4,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.1024
+        },
+        {
+          "titulo": "PLAN CASERO REEMPLAZO TOTAL DE RODILLA",
+          "pagina": 5,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.0848
+        },
+        {
+          "titulo": "Artroplastía total de rodilla- grado de funcionalidad postoperatoria e",
+          "pagina": 4,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.6339
+        },
+        {
+          "titulo": "Artroplastia total de rodilla- vías de abordaje pararrotuliana medial ",
+          "pagina": 9,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.6418
+        }
+      ]
+    },
+    {
+      "id": "rag_art_04",
+      "pregunta": "¿Es peligroso que se me hinche la pierna?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.663,
+      "procedimiento_esperado": "Reemplazo de cadera/rodilla",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 16,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.1336
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 15,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.0877
+        },
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 49,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.6339
+        },
+        {
+          "titulo": "Artroplastia total de rodilla- vías de abordaje pararrotuliana medial ",
+          "pagina": 6,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.6045
+        }
+      ]
+    },
+    {
+      "id": "rag_art_05",
+      "pregunta": "¿Cuánto me va a durar la prótesis?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.6736,
+      "procedimiento_esperado": "Reemplazo de cadera/rodilla",
+      "procedimiento_en_top4": true,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 24,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.1339
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 24,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.1026
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 24,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 1.1336
+        },
+        {
+          "titulo": "Artroplastia total de rodilla- vías de abordaje pararrotuliana medial ",
+          "pagina": 4,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.6045
+        }
+      ]
+    },
+    {
+      "id": "rag_gen_01",
+      "pregunta": "¿Cómo se ve una herida que está sanando bien?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.6154,
+      "procedimiento_esperado": null,
+      "procedimiento_en_top4": null,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 20,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9757
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 25,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9396
+        },
+        {
+          "titulo": "Colecistectomía subtotal en patología biliar complicada",
+          "pagina": 4,
+          "procedimiento": "Colecistectomía",
+          "score": 0.4839
+        },
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 39,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.5
+        }
+      ]
+    },
+    {
+      "id": "rag_gen_02",
+      "pregunta": "¿Para qué me pusieron ese drenaje?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 4,
+      "abstuvo": false,
+      "relevancia": 0.384,
+      "procedimiento_esperado": null,
+      "procedimiento_en_top4": null,
+      "top": [
+        {
+          "titulo": "CUIDADO ESTANDARIZADO EN EL PACIENTE QUIRURGICO CON ALTERACIONES EN LA",
+          "pagina": 19,
+          "procedimiento": "Colecistectomía",
+          "score": 0.5
+        },
+        {
+          "titulo": "FACTORES ASOCIADOS CON LA INSATISFACCIÓN DE LOS PACIENTES EN LOS RESUL",
+          "pagina": 40,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.4918
+        },
+        {
+          "titulo": "Identificación de microorganismos intrabdominales asociados a colecció",
+          "pagina": 7,
+          "procedimiento": "Apendicectomía",
+          "score": 0.4839
+        },
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 39,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.4918
+        }
+      ]
+    },
+    {
+      "id": "rag_gen_03",
+      "pregunta": "¿Qué señales de alarma tengo que vigilar en la casa?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.3996,
+      "procedimiento_esperado": null,
+      "procedimiento_en_top4": null,
+      "top": [
+        {
+          "titulo": "PLAN DE CUIDADO EN CASA DE PACIENTE EN POSTOPERATORIO DE APENDICECTOMÍ",
+          "pagina": 1,
+          "procedimiento": "Apendicectomía",
+          "score": 0.933
+        },
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 18,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.5
+        },
+        {
+          "titulo": "diagnóstico, tratamiento y seguimiento del paciente adulto con apendic",
+          "pagina": 42,
+          "procedimiento": "Apendicectomía",
+          "score": 0.4918
+        },
+        {
+          "titulo": "Reemplazo total de Cadera Guía para pacientes y cuidadores El camino h",
+          "pagina": 12,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.4839
+        }
+      ]
+    },
+    {
+      "id": "rag_gen_04",
+      "pregunta": "¿Por qué me duele tanto y qué hago con el dolor?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.5515,
+      "procedimiento_esperado": null,
+      "procedimiento_en_top4": null,
+      "top": [
+        {
+          "titulo": "cervical-es-patient",
+          "pagina": 63,
+          "procedimiento": "general",
+          "score": 0.5
+        },
+        {
+          "titulo": "CUIDADO ESTANDARIZADO EN EL PACIENTE QUIRURGICO CON ALTERACIONES EN LA",
+          "pagina": 26,
+          "procedimiento": "Colecistectomía",
+          "score": 0.4918
+        },
+        {
+          "titulo": "chapter APPENDICITIS",
+          "pagina": 1,
+          "procedimiento": "Apendicectomía",
+          "score": 0.4762
+        },
+        {
+          "titulo": "Documento",
+          "pagina": 66,
+          "procedimiento": "general",
+          "score": 0.4839
+        }
+      ]
+    },
+    {
+      "id": "rag_gen_05",
+      "pregunta": "¿Es normal que no me den ganas de comer después de la cirugía?",
+      "tipo": "respuesta",
+      "acierta": true,
+      "puesto": 1,
+      "abstuvo": false,
+      "relevancia": 0.6705,
+      "procedimiento_esperado": null,
+      "procedimiento_en_top4": null,
+      "top": [
+        {
+          "titulo": "Reemplazo total de cadera Guía para el paciente ",
+          "pagina": 10,
+          "procedimiento": "Reemplazo de cadera/rodilla",
+          "score": 0.9918
+        },
+        {
+          "titulo": "Post-cholecystectomy syndrome in patients undergoing laparoscopic chol",
+          "pagina": 4,
+          "procedimiento": "Colecistectomía",
+          "score": 0.4918
+        },
+        {
+          "titulo": "Colon Cancer Surgery and Recovery",
+          "pagina": 9,
+          "procedimiento": "Colectomía",
+          "score": 0.4839
+        },
+        {
+          "titulo": "GUÍA DE MANEJO PARA EL DIAGNÓSTICO, TRATAMIENTO, SEGUIMIENTO Y PALIACI",
+          "pagina": 147,
+          "procedimiento": "Colectomía",
+          "score": 0.4478
+        }
+      ]
+    },
+    {
+      "id": "abs_01",
+      "pregunta": "¿Cuántos miligramos de tramadol me tomo?",
+      "tipo": "abstencion",
+      "acierta": true,
+      "capa": "router",
+      "capa_esperada": "guardrails",
+      "motivo": "",
+      "relevancia": 0.4381
+    },
+    {
+      "id": "abs_02",
+      "pregunta": "¿Me cambio yo mismo la dosis de la metformina?",
+      "tipo": "abstencion",
+      "acierta": true,
+      "capa": "router",
+      "capa_esperada": "retriever",
+      "motivo": "«metformin» no aparece en el corpus indexado",
+      "relevancia": 0.529
+    },
+    {
+      "id": "abs_03",
+      "pregunta": "¿Me puedo tomar un aguardiente el sábado?",
+      "tipo": "abstencion",
+      "acierta": true,
+      "capa": "retriever",
+      "capa_esperada": "retriever",
+      "motivo": "«aguardi» no aparece en el corpus indexado",
+      "relevancia": 0.3302
+    },
+    {
+      "id": "abs_04",
+      "pregunta": "¿Cuándo puedo usar la prótesis después de la mastectomía?",
+      "tipo": "abstencion",
+      "acierta": true,
+      "capa": "router",
+      "capa_esperada": "retriever",
+      "motivo": "«mastectom» no aparece en el corpus indexado",
+      "relevancia": 0.7114
+    },
+    {
+      "id": "abs_05",
+      "pregunta": "¿Me sirve la reconstrucción mamaria inmediata?",
+      "tipo": "abstencion",
+      "acierta": true,
+      "capa": "router",
+      "capa_esperada": "retriever",
+      "motivo": "",
+      "relevancia": 0.6038
+    },
+    {
+      "id": "abs_06",
+      "pregunta": "¿Cuánto tiempo me queda de vida con esto?",
+      "tipo": "abstencion",
+      "acierta": true,
+      "capa": "router",
+      "capa_esperada": "cualquiera",
+      "motivo": "",
+      "relevancia": 0.4788
+    },
+    {
+      "id": "abs_07",
+      "pregunta": "¿Qué número de la lotería juego mañana?",
+      "tipo": "abstencion",
+      "acierta": true,
+      "capa": "router",
+      "capa_esperada": "router",
+      "motivo": "relevancia máxima 0.329, por debajo del umbral 0.340",
+      "relevancia": 0.329
+    },
+    {
+      "id": "abs_08",
+      "pregunta": "¿Cuánto cuesta la cirugía en otra clínica?",
+      "tipo": "abstencion",
+      "acierta": true,
+      "capa": "router",
+      "capa_esperada": "router",
+      "motivo": "",
+      "relevancia": 0.692
+    }
+  ]
+}

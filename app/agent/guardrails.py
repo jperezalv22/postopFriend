@@ -151,10 +151,36 @@ def verificar_no_tranquiliza(respuesta: str, nivel: str) -> Veredicto:
 
 # ─── 3. Inyección de prompt ──────────────────────────────────────────────────
 
+# Una inyección que reasigna el papel del agente tiene que nombrar el papel. Sin
+# esa exigencia, «eres» a secas bloqueaba «Eres muy amable, gracias» y «actúa como»
+# bloqueaba «mi hija actúa como si yo no pudiera hacer nada sola»: dos frases
+# perfectamente normales que el filtro sustituía por el guion de inyección, cortando
+# la llamada en seco. Lo detectó `evals/run_safety_eval.py` (caso leg_03).
+#
+# La lista deja fuera «enfermera» a propósito: es el papel que el agente ya tiene,
+# así que asignárselo no le da nada que no tuviera. Lo que se persigue es el intento
+# de convertirlo en otra cosa —un médico que receta, un asistente sin filtros—, y eso
+# siempre nombra lo que quiere que sea.
+_ROL_SUPLANTADO = (
+    r"(?:medic[oa]|doctor[ae]?|cirujan[oa]|farmaceut|asistente|ia\b|chat\s?gpt|gpt|"
+    r"modelo|desarrollador[ae]?|experto|sistema|bot\b|hacker|abogad[oa]|"
+    r"human[oa]|dios)"
+)
+
 PATRONES_INYECCION = (
     re.compile(r"ignor[ae][a-z]*\s+(?:todas?\s+)?(?:tus|las|sus)\s+instruc", re.IGNORECASE),
     re.compile(r"olvid[ae][a-z]*\s+(?:todo\s+)?lo\s+anterior", re.IGNORECASE),
-    re.compile(r"\b(?:eres|ahora eres|actua como|actúa como|comportate como|pretende ser)\b",
+    re.compile(rf"\b(?:ahora\s+)?eres\s+(?:un[ao]?|el|la|mi)?\s*{_ROL_SUPLANTADO}",
+               re.IGNORECASE),
+    # «actúa como si fueras mi cirujano» es la misma asignación de rol con un rodeo.
+    # El «si fueras» es opcional: lo que decide sigue siendo que nombre el rol, así
+    # que «actúa como si yo no pudiera hacer nada» no cae.
+    re.compile(
+        rf"\bactu[ae]\s+como\s+(?:si\s+(?:fuera|fueras|eres|es)\s+)?"
+        rf"(?:un[ao]?|el|la|mi)?\s*{_ROL_SUPLANTADO}",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\b(?:comportate|compórtate|pretende ser|hazte pasar por|finge ser)\b",
                re.IGNORECASE),
     re.compile(r"\b(?:system\s*prompt|prompt\s*del\s*sistema|instrucciones\s+del\s+sistema)\b",
                re.IGNORECASE),

@@ -11,9 +11,15 @@ administrativa y los turnos del paciente, igual que en una llamada real.
 Hay caché en disco por (caso, capa, versión del prompt): repetir la evaluación no
 gasta cuota, y cambiar el prompt la invalida sola.
 
+**Está pensada para correrse a trozos.** El nivel gratuito de Groq no da para las
+320 llamadas seguidas, así que los casos se piden en orden de valor —rojo, amarillo,
+verde— y la corrida se detiene sola cuando la cuota se agota. Lo medido queda en
+caché y el mismo comando, al día siguiente, continúa donde se quedó. Las cifras se
+publican siempre con la cobertura alcanzada al lado.
+
     python evals/run_triage_eval.py --n 40
     python evals/run_triage_eval.py --capa capa2_ruidosa
-    python evals/run_triage_eval.py --guardar        # los 160 x 2
+    python evals/run_triage_eval.py --guardar        # los 160 x 2, por trozos
 """
 
 import argparse
@@ -24,6 +30,8 @@ import logging
 import time
 from datetime import date
 from pathlib import Path
+
+import _bootstrap  # noqa: F401  (sys.path + UTF-8; tiene que ir primero)
 
 from dataset import Caso, cargar_casos
 from metricas import Resultado, imprimir, resumir
@@ -51,15 +59,48 @@ def hubo_fallo_de_api(incidencias: list[str]) -> bool:
     return any(i.startswith(FALLOS_DE_API) for i in incidencias)
 
 
+# Orden en que se gasta la cuota. No cambia ninguna métrica: cambia qué queda
+# medido si la corrida se corta a mitad.
+VALOR = {"rojo": 0, "amarillo": 1, "verde": 2}
+
+
+def ordenar_por_valor(casos: list[Caso]) -> list[Caso]:
+    """Pide primero los casos que más pesan si la cuota no alcanza para todos.
+
+    El nivel gratuito no da para las 320 llamadas de un tirón, así que el orden
+    deja de ser un detalle: es qué se puede afirmar si la corrida se corta. Los 12
+    rojos deciden el recall que la rúbrica mira; los 123 verdes solo mueven la
+    exactitud global. Las dos capas del mismo caso van pegadas para que la
+    comparación limpia/ruidosa —el hallazgo que mide al extractor, no al motor—
+    sobreviva a un corte igual que el recall.
+
+    El caché hace el resto: lo que entró un día no se vuelve a pedir al siguiente.
+    """
+    return sorted(casos, key=lambda c: (VALOR.get(c.etiqueta, 9), c.caso_id, c.capa))
+
+
+def cobertura(resultados: list[Resultado], universo: list[Caso]) -> dict[str, tuple[int, int]]:
+    """Cuántos casos de cada etiqueta se llegaron a medir, sobre el total del dataset."""
+    total: dict[str, int] = {}
+    for c in universo:
+        total[c.etiqueta] = total.get(c.etiqueta, 0) + 1
+    medidos: dict[str, int] = {}
+    for r in resultados:
+        medidos[r.esperado] = medidos.get(r.esperado, 0) + 1
+    return {e: (medidos.get(e, 0), n) for e, n in sorted(total.items(), key=lambda kv: VALOR.get(kv[0], 9))}
+
+
 async def procesar(caso: Caso, semaforo: asyncio.Semaphore, usar_cache: bool = True) -> Resultado:
     ficha = construir_ficha(caso.paciente_id, caso.dia_postop)
     ruta = clave_cache(caso)
 
+    backend = get_settings().llm_backend
     if usar_cache and ruta.exists():
         datos = json.loads(ruta.read_text("utf-8"))
         estado, incidencias = extractor.parsear(
             datos["crudo"], datos["dicho"], datos.get("hubo_tercero", False)
         )
+        backend = datos.get("backend", "groq")
     else:
         async with semaforo:
             estado, incidencias = await extractor.extraer(ficha, caso.turnos)
@@ -83,6 +124,10 @@ async def procesar(caso: Caso, semaforo: asyncio.Semaphore, usar_cache: bool = T
                             if t["hablante"] in ("paciente", "tercero")
                         ),
                         "hubo_tercero": any(t["hablante"] == "tercero" for t in caso.turnos),
+                        # Por qué ruta se pidió. La inferencia la ejecutó Groq en
+                        # ambos casos —`openrouter` va fijado a Groq y llm.py lo
+                        # verifica—, pero el dato queda escrito y no supuesto.
+                        "backend": backend,
                     },
                     ensure_ascii=False,
                 ),
@@ -103,6 +148,7 @@ async def procesar(caso: Caso, semaforo: asyncio.Semaphore, usar_cache: bool = T
         obtenido=str(decision.nivel), score=decision.score,
         detalle={
             "fallo_api": hubo_fallo_de_api(incidencias),
+            "backend": backend,
             "estilo": caso.estilo_paciente,
             "arquetipo": caso.trayectoria.arquetipo,
             "dia_postop": caso.dia_postop,
@@ -133,6 +179,7 @@ def _como_json(estado) -> dict:
 
 async def main_async(args) -> int:
     casos = cargar_casos(args.capa or None)
+    universo = list(casos)  # antes de muestrear: es contra esto que se declara cobertura
     if args.n:
         # Muestra estratificada: sin esto, los primeros 40 casos serían casi todo
         # verde y el recall de rojo se mediría sobre uno o dos casos.
@@ -145,6 +192,9 @@ async def main_async(args) -> int:
             seleccion += grupo[:cuota]
         casos = seleccion
 
+    if not args.orden_dataset:
+        casos = ordenar_por_valor(casos)
+
     print(f"\n{len(casos)} casos · extractor real + motor real · {get_settings().llm_model}")
     en_cache = sum(1 for c in casos if clave_cache(c).exists())
     print(f"{en_cache} en caché, {len(casos) - en_cache} por consultar a la API")
@@ -152,25 +202,67 @@ async def main_async(args) -> int:
     t0 = time.perf_counter()
     semaforo = asyncio.Semaphore(args.concurrencia)
     resultados: list[Resultado] = []
+    corte = False
     for i in range(0, len(casos), 20):
         lote = casos[i : i + 20]
-        resultados += await asyncio.gather(
+        del_lote = await asyncio.gather(
             *(procesar(c, semaforo, not args.sin_cache) for c in lote)
         )
+        resultados += del_lote
         print(f"  {len(resultados)}/{len(casos)}  ({time.perf_counter() - t0:.0f} s)", flush=True)
+
+        # Si el lote entero falló, la cuota del día se acabó. Seguir pidiendo solo
+        # gasta reloj: cada llamada agota sus 5 reintentos antes de rendirse, y no
+        # cachea nada. Se para y se declara hasta dónde se llegó; mañana continúa
+        # desde el caché.
+        if all(r.detalle.get("fallo_api") for r in del_lote):
+            print("\n  El lote completo falló por cuota. Se detiene aquí: lo ya obtenido\n"
+                  "  está en caché y la siguiente corrida sigue donde esta se quedó.")
+            corte = True
+            break
 
     # Un resultado con la API caída no mide el extractor: mide la cuota de Groq.
     # Se declara antes que cualquier cifra, porque si no son cero la cifra no vale.
     fallidos = [r for r in resultados if r.detalle.get("fallo_api")]
     if fallidos:
-        print(f"\n  AVISO: {len(fallidos)} de {len(resultados)} casos fallaron por límite de "
-              f"cuota de Groq.\n  Las métricas de abajo NO son válidas. Vuelva a correr con "
-              f"--concurrencia 1;\n  lo ya obtenido queda en caché y no se vuelve a pedir.")
+        print(f"\n  AVISO: {len(fallidos)} de {len(resultados)} casos no se midieron: la API "
+              f"no contestó\n  (límite de cuota). No se cachean y quedan fuera de las cifras; "
+              f"lo que sí entró\n  está en caché y la próxima corrida no lo vuelve a pedir.")
         resultados = [r for r in resultados if not r.detalle.get("fallo_api")]
         if not resultados:
             return 1
 
+    # La cobertura va **antes** que las cifras y no después, por la misma razón que
+    # los fallos de API: un porcentaje sin el denominador al lado invita a leerlo
+    # como si fuera el del dataset completo.
+    cob = cobertura(resultados, universo)
+    completa = all(medidos == total for medidos, total in cob.values())
+    print("\nCobertura medida sobre el dataset")
+    print("─" * 62)
+    for etiqueta, (medidos, total) in cob.items():
+        print(f"  {etiqueta:<10} {medidos:>4} / {total:<4}  {medidos / total:>6.1%}")
+    if not completa:
+        print("\n  Cobertura PARCIAL. El recall por nivel de abajo es válido sobre los casos\n"
+              "  medidos, pero la exactitud global NO es comparable con la del motor sobre\n"
+              "  los 160: se pidieron primero los rojos, así que la mezcla de etiquetas de\n"
+              "  esta muestra no es la del dataset. Cítela siempre con estos denominadores.")
+
+    # Qué ruta pidió cada medición. Las dos las ejecuta Groq —`openrouter` va fijado
+    # a Groq y llm.py descarta la respuesta si el enrutado se desvía—, así que la
+    # mezcla no parte la muestra en dos poblaciones. Se declara igual: el informe no
+    # debería tener que fiarse de esa cadena de razonamiento sin ver el conteo.
+    rutas: dict[str, int] = {}
+    for r in resultados:
+        clave = r.detalle.get("backend", "groq")
+        rutas[clave] = rutas.get(clave, 0) + 1
+    if len(rutas) > 1 or "groq" not in rutas:
+        print("\n  Ruta de cada medición (la inferencia es de Groq en todas): "
+              + " · ".join(f"{k} {v}" for k, v in sorted(rutas.items())))
+
     resumen = resumir(resultados)
+    resumen["cobertura"] = {e: {"medidos": m, "total": t} for e, (m, t) in cob.items()}
+    resumen["cobertura_completa"] = completa
+    resumen["rutas"] = rutas
     imprimir(resumen, "Sistema completo: extractor + motor sobre los diálogos")
 
     for capa in sorted({r.capa for r in resultados}):
@@ -221,6 +313,10 @@ async def main_async(args) -> int:
         print(f"\nGuardado en {ruta.relative_to(get_settings().dir_raiz)}")
 
     print(f"\n{time.perf_counter() - t0:.0f} s")
+    if corte or not completa:
+        pendientes = sum(1 for c in casos if not clave_cache(c).exists())
+        print(f"Quedan {pendientes} casos por medir. Repita el mismo comando cuando la "
+              f"cuota\nse reponga: el caché hace que solo se pidan esos.")
     return 0 if resumen["rojos_perdidos"] == 0 else 1
 
 
@@ -231,6 +327,9 @@ def main() -> int:
     ap.add_argument("--concurrencia", type=int, default=2,
                     help="llamadas en paralelo. El nivel gratuito de Groq limita a 12k "
                          "tokens/minuto y cada extracción gasta ~2.8k: subirlo solo genera 429")
+    ap.add_argument("--orden-dataset", action="store_true",
+                    help="pide los casos en el orden del dataset en vez de rojo→amarillo→verde. "
+                         "Solo tiene sentido si la cuota alcanza para todos")
     ap.add_argument("--sin-cache", action="store_true")
     ap.add_argument("--fallos", action="store_true")
     ap.add_argument("--guardar", action="store_true")

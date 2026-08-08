@@ -12,17 +12,14 @@ respuesta: la garantía es estructural, no una promesa en un prompt.
 
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-RAIZ = Path(__file__).resolve().parent.parent
-if str(RAIZ) not in sys.path:
-    sys.path.insert(0, str(RAIZ))
+import _bootstrap  # noqa: F401  (sys.path + UTF-8; tiene que ir primero)
 
-from app.config import get_settings  # noqa: E402
-from app.store.patients import leer_xlsx  # noqa: E402
+from app.config import get_settings
+from app.store.patients import leer_xlsx
 
 CAPAS = ("capa1_limpia", "capa2_ruidosa")
 

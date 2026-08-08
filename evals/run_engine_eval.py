@@ -18,6 +18,8 @@ import argparse
 import json
 from datetime import date
 
+import _bootstrap  # noqa: F401  (sys.path + UTF-8; tiene que ir primero)
+
 from dataset import Caso, cargar_casos
 from metricas import Resultado, imprimir, resumir
 
