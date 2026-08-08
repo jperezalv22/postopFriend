@@ -136,4 +136,23 @@ async def no_encontrado(request, exc):
     return JSONResponse({"error": "no encontrado", "ruta": str(request.url.path)}, status_code=404)
 
 
-app.mount("/static", StaticFiles(directory=ESTATICOS), name="static")
+class EstaticosSinCache(StaticFiles):
+    """StaticFiles que obliga al navegador a revalidar siempre.
+
+    Starlette no manda `Cache-Control`, así que el navegador aplica caché
+    heurístico: puede quedarse con un `.mjs` o un `.wasm` viejo aunque el archivo
+    en disco haya cambiado, y el síntoma es que «el arreglo no funciona» cuando
+    en realidad no se está probando el arreglo. Con `no-cache` el navegador
+    revalida contra el ETag y solo reusa lo que sigue siendo idéntico.
+
+    El coste es una petición condicional por archivo, irrelevante en local, y a
+    cambio lo que se ve en pantalla es siempre lo que hay en disco.
+    """
+
+    def file_response(self, *args, **kwargs):
+        respuesta = super().file_response(*args, **kwargs)
+        respuesta.headers["Cache-Control"] = "no-cache"
+        return respuesta
+
+
+app.mount("/static", EstaticosSinCache(directory=ESTATICOS), name="static")

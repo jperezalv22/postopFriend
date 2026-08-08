@@ -1,0 +1,85 @@
+<!--
+  Página de diagnóstico del VAD. No es parte de la demostración: existe para
+  contestar una pregunta concreta cuando `voice_check.html` falla y el mensaje
+  no dice por qué.
+
+  La diferencia con voice_check: aquí NO se carga `ort.wasm.min.js`. El bundle
+  del VAD trae su propio onnxruntime empotrado, así que la copia suelta debería
+  sobrar. Si el VAD arranca aquí y no allí, el problema es tener dos runtimes.
+
+  Imprime el error completo con su pila, no solo el mensaje.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico del VAD</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 60rem; padding: 0 1rem; }
+  h1 { font-size: 1.3rem; }
+  pre { background: #f4f4f5; padding: .75rem; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; }
+  .ok { color: #15803d; font-weight: 600; }
+  .mal { color: #b91c1c; font-weight: 600; }
+  section { border-left: 3px solid #d4d4d8; padding-left: 1rem; margin: 1.5rem 0; }
+</style>
+
+<h1>Diagnóstico del VAD</h1>
+<p>Esta página no carga <code>ort.wasm.min.js</code>. Si el VAD arranca aquí pero
+falla en <a href="/salud-voz">Salud de voz</a>, sobra esa copia suelta.</p>
+<div id="salida">Ejecutando…</div>
+
+<script src="/static/vendor/vad.bundle.min.js"></script>
+<script>
+const salida = document.getElementById("salida");
+salida.innerHTML = "";
+
+function bloque(titulo, ok, cuerpo) {
+  const s = document.createElement("section");
+  s.innerHTML = `<div class="${ok ? "ok" : "mal"}">${ok ? "OK" : "FALLA"} · ${titulo}</div>`
+    + (cuerpo ? `<pre>${cuerpo.replace(/</g, "&lt;")}</pre>` : "");
+  salida.appendChild(s);
+}
+
+(async () => {
+  // 1. Qué archivo recibe de verdad el navegador, saltándose el caché.
+  for (const nombre of ["ort-wasm-simd-threaded.mjs", "vad.bundle.min.js"]) {
+    try {
+      const r = await fetch(`/static/vendor/${nombre}`, { cache: "reload" });
+      const t = await r.text();
+      const versiones = [...new Set(t.match(/"1\.\d+\.\d+"/g) || [])].join(" ");
+      bloque(nombre, r.ok,
+        `${r.status} · ${t.length.toLocaleString("es")} bytes\n`
+        + `content-type: ${r.headers.get("content-type")}\n`
+        + `cache-control: ${r.headers.get("cache-control")}\n`
+        + `versiones que declara: ${versiones || "(ninguna)"}\n`
+        + `getValue: ${t.includes("getValue=function") || t.includes("getValue:") ? "presente" : "AUSENTE"}`);
+    } catch (e) {
+      bloque(nombre, false, String(e));
+    }
+  }
+
+  bloque("window.ort", !window.ort,
+    window.ort ? "existe pese a que esta página no lo carga (¿otra pestaña? ¿caché?)"
+               : "no existe, que es lo esperado aquí");
+
+  // 2. Arrancar el VAD sin la copia suelta de onnxruntime.
+  try {
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    bloque("Micrófono", false, String(e));
+    return;
+  }
+
+  try {
+    const v = await window.vad.MicVAD.new({
+      baseAssetPath: "/static/vendor/",
+      onnxWASMBasePath: "/static/vendor/",
+      model: "v5",
+      onSpeechEnd: () => {},
+    });
+    v.destroy?.();
+    bloque("MicVAD sin ort.wasm.min.js", true, "arrancó · sobra la copia suelta de onnxruntime");
+  } catch (e) {
+    bloque("MicVAD sin ort.wasm.min.js", false,
+      `${e.name}: ${e.message}\n\n${e.stack || "(sin pila)"}`);
+  }
+})();
+</script>

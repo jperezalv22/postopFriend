@@ -71,6 +71,24 @@
       }
 
       // 3. VAD desde /static/vendor (sin CDN)
+      //
+      // Antes de intentar arrancarlo se comprueba qué archivo está recibiendo de
+      // verdad el navegador. Un .mjs de otra versión de onnxruntime falla con
+      // «t.getValue is not a function», un mensaje que no menciona versiones ni
+      // rutas y que manda a buscar el problema donde no está. Con esto, el fallo
+      // dice cuál es la causa en vez de obligar a deducirla.
+      try {
+        const url = "/static/vendor/ort-wasm-simd-threaded.mjs";
+        const r = await fetch(url, { cache: "reload" });   // salta el caché del navegador
+        const texto = await r.text();
+        const tieneGetValue = texto.includes("getValue=function") || texto.includes("getValue:");
+        linea("Pegamento wasm de onnxruntime", tieneGetValue,
+          `${texto.length.toLocaleString("es")} bytes · getValue ${tieneGetValue ? "presente" : "AUSENTE"}` +
+          (tieneGetValue ? "" : " — el navegador está recibiendo una versión que el VAD no sabe usar"));
+      } catch (e) {
+        linea("Pegamento wasm de onnxruntime", false, `no se pudo descargar: ${e.message}`);
+      }
+
       try {
         if (window.ort?.env?.wasm) {
           window.ort.env.wasm.wasmPaths = "/static/vendor/";
@@ -81,9 +99,14 @@
           model: "v5", onSpeechEnd: () => {},
         });
         v.destroy?.();
-        linea("Silero VAD (empaquetado, sin CDN)", true, "modelo v5 cargado desde /static/vendor/");
+        linea("Silero VAD (empaquetado, sin CDN)", true,
+          `modelo v5 cargado desde /static/vendor/ · onnxruntime ${window.ort?.env?.versions?.common ?? window.ort?.version ?? "?"}`);
       } catch (e) {
-        linea("Silero VAD", false, `${e.message} — la llamada caerá a «pulsar para hablar»`);
+        linea("Silero VAD", false,
+          `${e.message} — la llamada caerá a «pulsar para hablar»` +
+          (String(e.message).includes("getValue")
+            ? " · versión de onnxruntime distinta a la que pide vad.bundle.min.js"
+            : ""));
       }
 
       // 4. Servidor: TTS y modelos
