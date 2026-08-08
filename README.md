@@ -117,7 +117,7 @@ falla, dice qué comando lo arregla.
 | **G2** reproducibilidad | `python scripts/doctor.py` — todo en verde |
 | **G3** modelo permitido | `python scripts/check_models.py` — evidencia contra la API viva |
 | **G4** voz en tiempo real | http://127.0.0.1:8000/salud-voz comprueba micrófono, VAD, servidor y voz en 10 s. Luego, en `/`, elija un paciente y pulse **Iniciar llamada**: el agente habla primero. |
-| **G5** conocimiento vivo | *(pendiente: consola de conocimiento)* |
+| **G5** conocimiento vivo | En http://127.0.0.1:8000/consola. Escriba una pregunta sobre un tema que el corpus no cubra en **Probar el conocimiento**: dirá que se abstendría, y por qué. Suba un PDF o TXT sobre ese tema y repita la pregunta: ahora responde y cita. Pulse **eliminar** y vuelva a preguntar: se abstiene otra vez. El botón **Verificar olvido** lo demuestra con el conteo en cero y el JSON de la búsqueda. |
 
 Sin micrófono: la interfaz de llamada tiene un campo de texto que hace el mismo
 recorrido completo (transcripción → agente → voz).
@@ -182,16 +182,62 @@ lista con ese motivo y no se indexa; nunca falla en silencio.
 
 ---
 
-## Métricas
+## Resultados de evaluación
+
+### Motor de triage sobre los 160 casos etiquetados
+
+Sin LLM y sin red: se alimenta el motor con la trayectoria clínica real de cada caso
+y se compara contra `label_ground_truth`. Corre en un segundo y fija el techo del
+sistema — si las reglas no clasifican bien con los valores exactos, ningún extractor
+lo va a salvar. Reproducible con `python evals/run_engine_eval.py`.
+
+| esperado \ obtenido | verde | amarillo | rojo |
+|---|---:|---:|---:|
+| **verde** (n=123) | 111 | 12 | 0 |
+| **amarillo** (n=25) | 0 | 25 | 0 |
+| **rojo** (n=12) | 0 | 0 | 12 |
+
+| | |
+|---|---:|
+| Exactitud | **92.5 %** |
+| Recall de rojo | **100 %** |
+| Recall de amarillo | **100 %** |
+| **Falsos negativos** | **0** |
+| Verdes sobre-escalados a amarillo | 12 de 123 |
+
+Los 12 sobre-escalados son el precio declarado de la asimetría: un falso positivo
+cuesta una llamada de enfermería, un falso negativo cuesta un reingreso. No hay
+umbral que separe verde de amarillo sin perder amarillos, porque las dos clases se
+solapan en el rango de score 2–3 del propio dataset.
+
+**Los moduladores de riesgo van apagados, con el dato delante.** Encendidos, la
+exactitud cae a 82.5 % y las falsas alarmas se duplican (28 en vez de 12), sin ganar
+un punto de sensibilidad. La causa es que las etiquetas del dataset no tienen en
+cuenta la comorbilidad. La regla clínica es real y sigue implementada en
+`rules.yaml`; encenderla exige recalibrar el corte de rojo a 7.
+Ver `python evals/run_engine_eval.py --con-moduladores`.
+
+`tests/test_calibracion.py` fija estas cifras: un cambio de peso que pierda un rojo
+pone la prueba en rojo antes de que el número llegue al informe.
+
+### Sistema completo (extractor real + motor)
+
+*(pendiente: los 160 × 2 casos. El nivel gratuito de Groq limita a 100 000 tokens
+diarios y la corrida necesita ~900 000.)*
+
+### Latencia, tokens y costo
 
 <!-- METRICS:START -->
-*(pendiente: las genera `scripts/report_metrics.py` desde `logs/turns.jsonl`, nunca se
+*(pendiente: los genera `scripts/report_metrics.py` desde `logs/turns.jsonl`, nunca se
 escriben a mano)*
 <!-- METRICS:END -->
 
-Estado del índice a hoy: **106 documentos · 9 512 fragmentos · 14 min de construcción**.
-Cadena de voz verificada de ida y vuelta con 100 % de coincidencia de palabras
-(`python scripts/probar_voz.py`).
+### Estado del conocimiento
+
+**106 documentos indexados · 9 512 fragmentos · 99 MB · 7.1 min de construcción.**
+El documento 107 es un escaneo sin capa de texto: se lista con ese motivo y no se
+indexa. Cadena de voz verificada de ida y vuelta con 100 % de coincidencia de
+palabras (`python scripts/probar_voz.py`).
 
 ---
 
