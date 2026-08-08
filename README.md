@@ -281,6 +281,9 @@ tests/      pruebas rápidas, sin API
 
 Comandos: `make ayuda`.
 
+Para entender **por qué** el código está así — decisiones, cifras medidas, bugs
+encontrados y lo que falta — vea [docs/estado-del-proyecto.md](docs/estado-del-proyecto.md).
+
 ---
 
 ## Avisos
