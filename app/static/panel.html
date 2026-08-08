@@ -12,15 +12,75 @@
     <nav>
       <a href="/">Llamada</a>
       <a href="/consola">Conocimiento</a>
-      <a href="/panel">Panel</a>
+      <a href="/panel" class="activo">Panel</a>
       <a href="/salud-voz">Salud de voz</a>
     </nav>
   </header>
-  <main style="grid-template-columns:1fr;max-width:900px">
+
+  <main style="grid-template-columns:1fr;max-width:1100px">
+
+    <!-- El filtro por ruta es lo primero que se ve, y no por casualidad: una cifra
+         medida por OpenRouter no describe el sistema que se entrega. Ver
+         app/obs/metricas.py. -->
     <div class="tarjeta">
-      <h2>Panel</h2>
-      <p class="vacio">En construcción. Bloque del sábado 8 de agosto según el cronograma del plan maestro.</p>
+      <div class="fila" style="justify-content:space-between">
+        <div class="fila">
+          <label class="mono" for="ruta">Ruta del LLM</label>
+          <select id="ruta">
+            <option value="groq">groq (la que se entrega)</option>
+            <option value="">todas</option>
+            <option value="openrouter">openrouter (desarrollo)</option>
+          </select>
+          <span id="marcaRuta" class="vacio"></span>
+        </div>
+        <div class="fila">
+          <label class="mono" for="auto"><input type="checkbox" id="auto" checked> refrescar</label>
+          <button id="refrescar">Actualizar</button>
+        </div>
+      </div>
     </div>
+
+    <!-- 1. Alertas ------------------------------------------------------- -->
+    <div class="tarjeta">
+      <h2>Cola de escalamiento</h2>
+      <div id="alertas"><p class="vacio">Cargando…</p></div>
+    </div>
+
+    <!-- 2. Latencia ------------------------------------------------------ -->
+    <div class="tarjeta">
+      <h2>Latencia · fin de habla → primer audio</h2>
+      <p class="vacio" style="margin-top:-6px">
+        Medida con el reloj del navegador en los dos extremos. El servidor no la
+        calcula: descontaría el viaje de red y el arranque del audio.
+      </p>
+      <div class="metricas" id="latencia"></div>
+      <div id="histograma" style="margin-top:14px"></div>
+      <h3 style="font-size:13px;color:var(--tenue);text-transform:uppercase;letter-spacing:.5px">
+        Desglose por etapa</h3>
+      <div id="etapas"></div>
+    </div>
+
+    <!-- 3. Consumo y costo ----------------------------------------------- -->
+    <div class="tarjeta">
+      <h2>Consumo y costo</h2>
+      <div class="metricas" id="consumo"></div>
+      <div id="costo" style="margin-top:14px"></div>
+    </div>
+
+    <!-- 4. Incidencias --------------------------------------------------- -->
+    <div class="tarjeta">
+      <h2>Incidencias registradas</h2>
+      <div id="incidencias"></div>
+    </div>
+
+    <!-- 5. Historial ----------------------------------------------------- -->
+    <div class="tarjeta">
+      <h2>Historial de llamadas</h2>
+      <div id="historial"><p class="vacio">Cargando…</p></div>
+    </div>
+
   </main>
+
+  <script src="/static/js/panel.js"></script>
 </body>
 </html>

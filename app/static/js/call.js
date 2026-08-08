@@ -3,6 +3,11 @@
 const $ = (id) => document.getElementById(id);
 const NIVELES = ["verde", "amarillo", "rojo", "indeterminado"];
 
+// Tramos de la escalada de silencio (§6.1 del plan). El cliente solo cuenta: es
+// quien sabe si el micrófono está oyendo algo. Qué se dice y cuándo se cierra por
+// protocolo lo decide el servidor, donde viven los guiones.
+const TRAMOS_DE_SILENCIO = [6, 12, 20];
+
 const estado = {
   ws: null,
   captura: null,
@@ -11,7 +16,29 @@ const estado = {
   turnoQueSuena: null,
   latencias: [],
   pacientes: [],
+  silencio: { temporizadores: [], desde: null },
 };
+
+// ─── Silencio ──────────────────────────────────────────────────────────────
+
+function pararSilencio() {
+  estado.silencio.temporizadores.forEach(clearTimeout);
+  estado.silencio.temporizadores = [];
+}
+
+function armarSilencio() {
+  // Se rearma entero en cada turno: los tramos se cuentan desde el último audio
+  // del agente, no desde que empezó la llamada.
+  pararSilencio();
+  if (estado.ws?.readyState !== 1) return;
+  estado.silencio.desde = performance.now();
+  estado.silencio.temporizadores = TRAMOS_DE_SILENCIO.map((s) =>
+    setTimeout(() => {
+      if (estado.ws?.readyState === 1) {
+        estado.ws.send(JSON.stringify({ tipo: "silencio", segundos: s }));
+      }
+    }, s * 1000));
+}
 
 // ─── Utilidades de pantalla ────────────────────────────────────────────────
 
@@ -94,6 +121,43 @@ function pintarCitas(citas) {
     </div>`).join("");
 }
 
+// ─── Acta de cierre ────────────────────────────────────────────────────────
+
+function pintarActa(acta) {
+  if (!acta || !acta.call_id) return;
+  const id = acta.call_id;
+  const l = acta.llamada || {};
+  const d = acta.decision || {};
+  const p = acta.proximos_pasos || {};
+  const met = (acta.metricas || {}).latencia_ms || {};
+  const con = (acta.metricas || {}).consumo || {};
+  const nivel = NIVELES.includes(d.nivel) ? d.nivel : "indeterminado";
+
+  const linea = (k, v) =>
+    `<div class="variable"><div class="nombre">${k}</div><div class="valor">${v}</div></div>`;
+
+  $("acta").innerHTML = `
+    <h2>Acta de la llamada <span class="nivel ${nivel}">${nivel}</span></h2>
+    <p class="mono" style="color:var(--tenue)">${id} · ${l.estado || "—"}</p>
+    ${linea("Duración", `${l.duracion_s ?? "—"} s · ${l.turnos ?? 0} turnos`)}
+    ${linea("Score", d.score ?? "—")}
+    ${linea("Plazo comunicado", p.plazo || "—")}
+    ${linea("Latencia P50 / P95", `${met.p50 ?? "—"} / ${met.p95 ?? "—"} ms`)}
+    ${linea("Tokens in / out", `${con.tokens_in ?? 0} / ${con.tokens_out ?? 0}`)}
+    ${p.alerta_id ? linea("Alerta generada", p.alerta_id) : ""}
+    ${(acta.incidencias || []).length
+      ? linea("Incidencias", acta.incidencias.map((i) => `<code>${i}</code>`).join(" "))
+      : ""}
+    <div class="fila" style="margin-top:12px">
+      <a href="/api/llamadas/${encodeURIComponent(id)}/acta.md">
+        <button>Descargar acta (.md)</button></a>
+      <a href="/api/llamadas/${encodeURIComponent(id)}/acta" target="_blank" rel="noopener">
+        <button>Ver JSON completo</button></a>
+    </div>`;
+  $("acta").hidden = false;
+  $("acta").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
 // ─── WebSocket ─────────────────────────────────────────────────────────────
 
 function conectar(callId) {
@@ -114,6 +178,9 @@ function conectar(callId) {
         break;
       case "estado":
         ponerEstado(m.valor);
+        // El reloj del silencio corre solo mientras se espera al paciente.
+        if (m.valor === "escuchando") armarSilencio();
+        else pararSilencio();
         break;
       case "turno":
         agregarTurno(m.hablante, m.texto, m.turno_idx);
@@ -133,6 +200,9 @@ function conectar(callId) {
         break;
       case "citas":
         pintarCitas(m.citas);
+        break;
+      case "acta":
+        pintarActa(m.acta);
         break;
       case "incidencia":
         agregarTurno("sistema", `incidencia: ${m.motivo}`, `inc-${Date.now()}`);
@@ -158,6 +228,7 @@ async function iniciarLlamada() {
 
   estado.latencias = [];
   $("transcripcion").innerHTML = "";
+  $("acta").hidden = true;
   pintarTriage(null);
 
   estado.reproductor = new Reproductor({
@@ -176,6 +247,7 @@ async function iniciarLlamada() {
 
   estado.captura = new CapturaDeVoz({
     alEmpezarHabla: () => {
+      pararSilencio();   // está hablando: el reloj del silencio no aplica
       if (estado.reproductor.sonando && estado.turnoQueSuena !== null) {
         estado.reproductor.detener();
         estado.ws?.send(JSON.stringify({ tipo: "barge_in", turno_idx: estado.turnoQueSuena }));
@@ -204,6 +276,7 @@ async function iniciarLlamada() {
 }
 
 function terminar() {
+  pararSilencio();
   estado.captura?.detener();
   estado.reproductor?.detener();
   $("llamar").disabled = false;

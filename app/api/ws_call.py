@@ -32,11 +32,12 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.agent import extractor, flow, generator, router as router_intencion, scripts_es_co
 from app.agent.flow import Contexto, Estado, Intencion
+from app.agent.llm import modelo_en_uso
 from app.config import get_settings
-from app.obs.logger import ahora_iso, registrar_turno
+from app.obs.logger import ahora_iso, registrar_llamada, registrar_turno
 from app.obs.trace import TurnTrace
 from app.rag import retriever
-from app.store import db
+from app.store import acta, db
 from app.store.patients import Ficha, construir_ficha
 from app.triage.engine import evaluar
 from app.triage.escalation import construir_alerta, escalar
@@ -59,6 +60,7 @@ class Sesion:
     contexto: Contexto = field(default_factory=Contexto)
     referencias: list[dict[str, Any]] = field(default_factory=list)
     alerta_id: str = ""
+    cerrada: bool = False
 
     async def enviar(self, **datos: Any) -> None:
         await self.ws.send_json(datos)
@@ -129,6 +131,7 @@ async def _manejar_control(sesion: Sesion, datos: dict[str, Any]) -> None:
         if traza is not None:
             traza.t_primer_audio_cliente = float(datos.get("t", 0.0))
             registrar_turno(traza)
+            _sellar_latencia(sesion, idx, traza)
             await sesion.enviar(
                 tipo="latencia", turno_idx=idx,
                 ms=traza.latencia_ms, etapas=traza.desglose(),
@@ -143,7 +146,53 @@ async def _manejar_control(sesion: Sesion, datos: dict[str, Any]) -> None:
             traza.incidencia("interrumpido_por_el_paciente")
         log.info("%s: el paciente interrumpió el turno %d", sesion.call_id, idx)
 
+    elif tipo == "silencio":
+        await _manejar_silencio(sesion, int(datos.get("segundos") or 0))
+
     elif tipo == "colgar":
+        # El acta se manda antes de cerrar el socket: si se dejara para el `finally`
+        # ya no habría por dónde enviarla y el paciente vería la llamada terminar
+        # sin resumen. Es la pantalla de cierre de la interfaz.
+        acta_final = _cerrar_llamada(sesion, estado=str(datos.get("estado") or ""))
+        await sesion.enviar(tipo="acta", acta=acta_final)
+        await sesion.enviar(tipo="estado", valor="colgado")
+        await sesion.ws.close()
+
+
+#: Escalada de silencio (§6.1 del plan). El cliente cuenta el tiempo —es quien sabe
+#: si el micrófono está oyendo algo— y el servidor decide qué se dice, porque los
+#: guiones y el cierre por protocolo viven aquí. Los tres tramos salen del caché de
+#: audio: no gastan LLM ni cuota, que es justo lo que hace falta cuando lo que pasa
+#: es que no está pasando nada.
+GUIONES_DE_SILENCIO = {
+    6: scripts_es_co.SILENCIO_6S,
+    12: scripts_es_co.SILENCIO_12S,
+    20: scripts_es_co.SILENCIO_20S,
+}
+
+
+async def _manejar_silencio(sesion: Sesion, segundos: int) -> None:
+    """A los 20 s se cierra por protocolo: el acta queda marcada `no_disponible`.
+
+    Insistir más no es persistencia sino una llamada colgada que nadie atendió y
+    que sigue ocupando la línea. El acta lo dice, y por eso hay un estado del acta
+    para esto en vez de tratarlo como una llamada incompleta cualquiera.
+    """
+    guion = GUIONES_DE_SILENCIO.get(segundos)
+    if guion is None:
+        return
+
+    sesion.contexto.anotar(f"silencio_{segundos}s")
+    idx = sesion.anotar("agente", guion)
+    traza = TurnTrace(sesion.call_id, idx)
+    traza.estado_flujo = str(sesion.contexto.estado)
+    traza.incidencia(f"silencio_{segundos}s")
+    sesion.trazas[idx] = traza
+    await _hablar(sesion, guion, idx, traza, cachear=True)
+
+    if segundos >= 20:
+        acta_final = _cerrar_llamada(sesion, estado="no_disponible")
+        await sesion.enviar(tipo="acta", acta=acta_final)
         await sesion.enviar(tipo="estado", valor="colgado")
         await sesion.ws.close()
 
@@ -160,10 +209,16 @@ async def _iniciar(sesion: Sesion, datos: dict[str, Any]) -> None:
     with db.transaccion() as con:
         con.execute(
             """INSERT OR REPLACE INTO llamadas
-                 (call_id, paciente_id, dia_postop, procedimiento, inicio_ts, estado, modelo_llm)
-               VALUES (?,?,?,?,?,'en_curso',?)""",
+                 (call_id, paciente_id, dia_postop, procedimiento, inicio_ts, estado,
+                  modelo_llm, ruta_llm)
+               VALUES (?,?,?,?,?,'en_curso',?,?)""",
+            # `ruta_llm` no es un detalle de infraestructura: mientras el plan de
+            # Groq esté cerrado se desarrolla por OpenRouter y se graba por Groq,
+            # así que la base va a tener llamadas de las dos. Sin esta columna no
+            # hay forma de decir qué cifra salió de dónde, y las métricas del
+            # informe tienen que poder rastrearse hasta la llamada que las produjo.
             (sesion.call_id, paciente_id, dia, sesion.ficha.paciente.procedimiento,
-             ahora_iso(), get_settings().llm_model),
+             ahora_iso(), modelo_en_uso(), get_settings().llm_backend),
         )
 
     await sesion.enviar(tipo="listo", call_id=sesion.call_id, paciente=sesion.ficha.como_dict())
@@ -218,6 +273,7 @@ async def _procesar_turno(
     """
     ctx = sesion.contexto
     idx_paciente = sesion.anotar("paciente", texto)
+    _guardar_turno_del_paciente(sesion, idx_paciente, texto, duracion)
     await sesion.enviar(tipo="turno", hablante="paciente", texto=texto, turno_idx=idx_paciente)
 
     idx = sesion.anotar("agente", "")
@@ -371,30 +427,133 @@ async def _hablar(
 
 
 def _guardar_turno(sesion: Sesion, idx: int, hablante: str, texto: str, traza: TurnTrace) -> None:
+    """Un turno en SQLite, con todo lo medido.
+
+    Los contadores (etapas, `llm_calls`, `rag_consultas`, audio) estaban solo en
+    `logs/turns.jsonl`. Van también aquí porque el acta y el panel se reconstruyen
+    desde la base: un JSONL no se puede cruzar con la llamada ni filtrar por ruta
+    del LLM, y el jurado abre la base, no el log.
+    """
     import json
 
     with db.transaccion() as con:
         con.execute(
             """INSERT OR REPLACE INTO turnos
                  (call_id, turno_idx, hablante, texto, ts, latencia_ms, estado_flujo,
-                  nivel_triage, tokens_in, tokens_out, incidencias_json)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                  nivel_triage, tokens_in, tokens_out, llm_calls, rag_consultas,
+                  audio_paciente_s, etapas_json, incidencias_json)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (sesion.call_id, idx, hablante, texto, ahora_iso(), traza.latencia_ms,
              traza.estado_flujo, traza.nivel_triage, traza.tokens_in, traza.tokens_out,
+             traza.llm_calls, traza.rag_consultas, round(traza.audio_paciente_s, 2),
+             json.dumps(traza.desglose(), ensure_ascii=False),
              json.dumps(traza.incidencias, ensure_ascii=False)),
         )
 
 
-def _cerrar_llamada(sesion: Sesion) -> None:
+def _sellar_latencia(sesion: Sesion, idx: int, traza: TurnTrace) -> None:
+    """Escribe la latencia del turno cuando por fin se conoce.
+
+    El turno se guarda al terminar de hablar, pero la métrica no existe hasta que
+    el navegador confirma que el audio empezó a sonar, y ese ACK llega después. Sin
+    este `UPDATE`, `turnos.latencia_ms` quedaba siempre en NULL: el panel y el acta
+    mostraban «sin medir» mientras `logs/turns.jsonl` sí tenía el número. Dos
+    fuentes que se contradicen es exactamente lo que la rúbrica busca al comprobar
+    que las métricas concuerden.
+    """
+    import json
+
+    with db.transaccion() as con:
+        con.execute(
+            "UPDATE turnos SET latencia_ms = ?, etapas_json = ?, tokens_in = ?, "
+            "tokens_out = ?, llm_calls = ?, rag_consultas = ?, incidencias_json = ? "
+            "WHERE call_id = ? AND turno_idx = ?",
+            (traza.latencia_ms, json.dumps(traza.desglose(), ensure_ascii=False),
+             traza.tokens_in, traza.tokens_out, traza.llm_calls, traza.rag_consultas,
+             json.dumps(traza.incidencias, ensure_ascii=False),
+             sesion.call_id, idx),
+        )
+
+
+def _guardar_turno_del_paciente(sesion: Sesion, idx: int, texto: str, duracion: float) -> None:
+    """Lo que dijo el paciente, sin métricas: no hay latencia que medirle.
+
+    Sin esto la transcripción de la base tendría solo un lado de la conversación,
+    y el acta se construye desde la base.
+    """
+    with db.transaccion() as con:
+        con.execute(
+            """INSERT OR REPLACE INTO turnos
+                 (call_id, turno_idx, hablante, texto, ts, audio_paciente_s)
+               VALUES (?,?,?,?,?,?)""",
+            (sesion.call_id, idx, "paciente", texto, ahora_iso(), round(duracion, 2)),
+        )
+
+
+def _cerrar_llamada(sesion: Sesion, estado: str = "") -> dict[str, Any]:
+    """Cierra la llamada, genera el acta y la persiste. Idempotente.
+
+    Se llama dos veces por diseño: una al colgar (para poder mandarle el acta al
+    cliente antes de cerrar el socket) y otra en el `finally`, que es la que cubre
+    la llamada que se corta sola. La segunda no debe rehacer nada.
+    """
+    if sesion.cerrada:
+        return {}
+    sesion.cerrada = True
+
     for idx, traza in sesion.trazas.items():
         # Un turno cuyo audio nunca empezó a sonar no tiene latencia medible; se
         # registra igual para no perder los tokens ni las incidencias.
         if traza.t_primer_audio_cliente is None and traza.t_fin_habla_cliente is not None:
             traza.incidencia("sin_ack_de_primer_audio")
             registrar_turno(traza)
+
+    ctx = sesion.contexto
+    decision = ctx.decision
+    # `completa` solo si el protocolo llegó a decidir. Una llamada que se cortó en
+    # la tercera pregunta no es una llamada completa por mucho que el socket se
+    # cerrara limpiamente, y el acta lo dice en su sección 2.
+    if not estado:
+        estado = "completa" if decision is not None else "incompleta"
+
     with db.transaccion() as con:
         con.execute(
-            "UPDATE llamadas SET fin_ts = ?, turnos = ?, estado = 'completa' WHERE call_id = ?",
-            (ahora_iso(), sesion.turno_idx, sesion.call_id),
+            """UPDATE llamadas
+                 SET fin_ts = ?, turnos = ?, estado = ?,
+                     nivel_triage = ?, score_total = ?,
+                     duracion_s = (julianday(?) - julianday(inicio_ts)) * 86400.0
+               WHERE call_id = ?""",
+            (ahora_iso(), sesion.turno_idx, estado,
+             str(decision.nivel) if decision else None,
+             decision.score if decision else None,
+             ahora_iso(), sesion.call_id),
         )
-    log.info("llamada cerrada: %s (%d turnos)", sesion.call_id, sesion.turno_idx)
+
+    acta_final: dict[str, Any] = {}
+    try:
+        acta_final = acta.construir(
+            sesion.call_id,
+            ficha=sesion.ficha,
+            estado_clinico=ctx.estado_clinico,
+            decision=decision,
+            referencias=sesion.referencias,
+            incidencias=ctx.incidencias,
+            alerta_id=sesion.alerta_id,
+            estado=estado,
+        )
+        acta.guardar(sesion.call_id, acta_final)
+        registrar_llamada({
+            "call_id": sesion.call_id,
+            "estado": estado,
+            "turnos": sesion.turno_idx,
+            "nivel": str(decision.nivel) if decision else None,
+            "alerta_id": sesion.alerta_id or None,
+            **{k: acta_final["metricas"][k] for k in ("latencia_ms", "consumo", "costo_usd")},
+        })
+    except Exception as e:
+        # Un acta que falla no puede impedir que la llamada cierre: los turnos ya
+        # están en la base y `acta.cargar()` sabe reconstruirla después.
+        log.exception("no se pudo generar el acta de %s: %s", sesion.call_id, e)
+
+    log.info("llamada cerrada: %s (%d turnos, %s)", sesion.call_id, sesion.turno_idx, estado)
+    return acta_final

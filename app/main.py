@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import kb, ws_call
+from app.api import calls, kb, ws_call
 from app.config import get_settings
 from app.store import db
 
@@ -78,6 +78,7 @@ app = FastAPI(
 
 app.include_router(ws_call.router)
 app.include_router(kb.router)
+app.include_router(calls.router)
 
 
 @app.get("/api/pacientes")

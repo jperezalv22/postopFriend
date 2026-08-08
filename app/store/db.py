@@ -49,6 +49,10 @@ CREATE TABLE IF NOT EXISTS turnos (
     nivel_triage      TEXT,
     tokens_in         INTEGER DEFAULT 0,
     tokens_out        INTEGER DEFAULT 0,
+    llm_calls         INTEGER DEFAULT 0,
+    rag_consultas     INTEGER DEFAULT 0,
+    audio_paciente_s  REAL,
+    etapas_json       TEXT,                              -- {"stt":412.0,"llm":688.1,…}
     referencias_json  TEXT,
     incidencias_json  TEXT,
     UNIQUE(call_id, turno_idx)
@@ -132,6 +136,13 @@ def transaccion() -> Iterator[sqlite3.Connection]:
 #: aparte. Un `duplicate column name` significa que ya estaba: no es un error.
 COLUMNAS_TARDIAS = (
     ("llamadas", "ruta_llm", "TEXT"),
+    # Lo que hacía falta para que el acta y el panel se puedan reconstruir desde
+    # SQLite y nada más. Estaban solo en `logs/turns.jsonl`, y un JSONL no se puede
+    # cruzar con la llamada ni filtrar por ruta: el jurado abre la base, no el log.
+    ("turnos", "llm_calls", "INTEGER"),
+    ("turnos", "rag_consultas", "INTEGER"),
+    ("turnos", "audio_paciente_s", "REAL"),
+    ("turnos", "etapas_json", "TEXT"),
 )
 
 
