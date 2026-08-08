@@ -60,6 +60,7 @@ class Sesion:
     contexto: Contexto = field(default_factory=Contexto)
     referencias: list[dict[str, Any]] = field(default_factory=list)
     alerta_id: str = ""
+    capturas_degradadas: int = 0    # seguidas, sin un turno bueno en medio
     cerrada: bool = False
 
     async def enviar(self, **datos: Any) -> None:
@@ -234,6 +235,21 @@ async def _iniciar(sesion: Sesion, datos: dict[str, Any]) -> None:
 
 # ─── Audio entrante ──────────────────────────────────────────────────────────
 
+#: Cuántas veces seguidas se pide repetición antes de callarse y solo escuchar.
+#:
+#: «Perdón, no le escuché bien» sale del caché de audio, así que suena a los 900 ms
+#: y suena por el altavoz del paciente. El micrófono lo oye, el VAD lo toma por
+#: habla, manda ese eco, y como no hay nada que transcribir el agente vuelve a
+#: pedir repetición: en una llamada real se encadenaron tres vueltas en menos de
+#: tres segundos. El filtro del navegador corta casi todo antes de que salga, pero
+#: la realimentación no puede depender solo de eso.
+#:
+#: Callarse rompe el ciclo por donde se alimenta. Y no deja la llamada colgada: el
+#: cliente rearma su reloj al recibir «escuchando», así que la escalada de silencio
+#: sigue corriendo y el paciente encuentra la línea callada para hablar.
+REPETICIONES_ANTES_DE_CALLAR = 2
+
+
 async def _manejar_audio(sesion: Sesion, audio: bytes) -> None:
     cabecera = _audio_pendiente.pop(sesion.call_id, {})
     t_fin_habla = cabecera.get("t_fin_habla")
@@ -252,10 +268,20 @@ async def _manejar_audio(sesion: Sesion, audio: bytes) -> None:
     if transcripcion.vacia:
         # Nunca rellenar lo que no se entendió: se pide repetición.
         traza.incidencia(f"audio_degradado:{transcripcion.motivo}")
+        sesion.capturas_degradadas += 1
+        await sesion.enviar(tipo="incidencia", motivo=transcripcion.motivo)
+
+        if sesion.capturas_degradadas > REPETICIONES_ANTES_DE_CALLAR:
+            # Pedir repetición otra vez es echarle gasolina al fuego. Ver arriba.
+            traza.incidencia("repeticion_omitida_por_realimentacion")
+            log.info("%s: %d capturas degradadas seguidas, se calla y escucha",
+                     sesion.call_id, sesion.capturas_degradadas)
+            await sesion.enviar(tipo="estado", valor="escuchando")
+            return
+
         idx = sesion.anotar("agente", scripts_es_co.NO_ESCUCHE)
         sesion.trazas[idx] = traza
         traza.turno_idx = idx
-        await sesion.enviar(tipo="incidencia", motivo=transcripcion.motivo)
         await _hablar(sesion, scripts_es_co.NO_ESCUCHE, idx, traza, cachear=True)
         return
 
@@ -272,6 +298,7 @@ async def _procesar_turno(
     tokens. Es la razón de que el turno quepa en el objetivo de 1.5 s.
     """
     ctx = sesion.contexto
+    sesion.capturas_degradadas = 0   # entró un turno bueno: la racha se rompió
     idx_paciente = sesion.anotar("paciente", texto)
     _guardar_turno_del_paciente(sesion, idx_paciente, texto, duracion)
     await sesion.enviar(tipo="turno", hablante="paciente", texto=texto, turno_idx=idx_paciente)
