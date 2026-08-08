@@ -13,7 +13,7 @@ import logging
 import mimetypes
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -90,6 +90,29 @@ def pacientes():
         "dias_postop": list(DIAS_POSTOP),
         "pacientes": [p.como_dict() for p in listar_pacientes()],
     }
+
+
+@app.post("/api/diagnostico/transcribir")
+async def diagnostico_transcribir(audio: UploadFile = File(...)):
+    """Transcribe un enunciado que el VAD descartó, fuera de la llamada.
+
+    Un descarte no deja rastro en ningún sitio: el audio no sale del navegador, así
+    que no hay transcripción, ni turno, ni fila en la base. Eso convierte el ajuste
+    de `PICO_MINIMO` en una discusión de impresiones — «me parece que me corta».
+
+    Esto la vuelve una pregunta con respuesta: si lo descartado era «me duele un
+    ocho», el corte está alto y se está perdiendo trayectoria clínica; si era
+    silencio o el propio agente por el altavoz, el corte está donde debe.
+
+    No toca la sesión ni el diálogo: no anota turno, no cuenta capturas degradadas
+    y no dispara al extractor. Solo transcribe y devuelve. Lo llama únicamente la
+    interfaz con `?diag=1`, porque gasta una transcripción por cada descarte.
+    """
+    from app.voice import stt
+
+    datos = await audio.read()
+    t = await stt.transcribir(datos, nombre="descartado.wav")
+    return {"texto": t.texto, "vacia": t.vacia, "motivo": t.motivo, "stt_ms": round(t.ms)}
 
 
 @app.get("/health")
