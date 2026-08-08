@@ -1,0 +1,38 @@
+# Sin esto, git decide si un archivo es texto por heurística: mira si hay un byte
+# nulo cerca del principio. Con core.autocrlf=true (lo normal en Windows, que es
+# donde va a clonar el jurado), un binario mal clasificado sale del clon con los
+# saltos de línea cambiados, es decir, corrupto.
+#
+# El riesgo no es teórico: el índice de Chroma y los modelos ONNX se entregan ya
+# construidos dentro del repo. Si uno se corrompe al clonar, se caen el RAG y la
+# compuerta G5 a la vez, y el síntoma aparecería en la máquina del jurado y no
+# aquí. Se declara a mano en vez de confiar en la heurística.
+
+*.wasm      binary
+*.onnx      binary
+*.sqlite3   binary
+*.bin       binary
+*.pickle    binary
+*.pkl       binary
+*.xlsx      binary
+*.pdf       binary
+*.mp3       binary
+*.wav       binary
+*.png       binary
+*.jpg       binary
+
+# El código y la documentación se normalizan a LF en el repositorio; git entrega
+# lo que cada sistema espera en el árbol de trabajo.
+*.py        text eol=lf
+*.md        text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.json      text eol=lf
+*.jsonl     text eol=lf
+*.txt       text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.js        text eol=lf
+*.mjs       text eol=lf
+*.sh        text eol=lf
+*.ps1       text eol=crlf
