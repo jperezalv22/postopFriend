@@ -1,0 +1,18 @@
+INFO:     Started server process [29320]
+INFO:     Waiting for application startup.
+19:01:53 INFO    postopfriend.rag · cargando modelo de embeddings sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 (caché: C:\Users\Juan Pablo\Documents\Dev\Personal\Reto Tech\postopFriend\data\modelos)
+C:\Users\Juan Pablo\Documents\Dev\Personal\Reto Tech\postopFriend\app\rag\embedder.py:54: UserWarning: The model sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 now uses mean pooling instead of CLS embedding. In order to preserve the previous behaviour, consider either pinning fastembed version to 0.5.1 or using `add_custom_model` functionality.
+  return TextEmbedding(model_name=nombre, cache_dir=str(cache))
+19:01:58 INFO    postopfriend.rag · índice BM25 reconstruido: 9512 fragmentos, 30974 términos (kb_version=9)
+19:01:58 INFO    postopfriend · conocimiento listo: 9512 fragmentos de 106 documentos (kb_version=9)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8012 (Press CTRL+C to quit)
+INFO:     127.0.0.1:60407 - "POST /api/kb/probar HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60408 - "POST /api/kb/documentos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57364 - "GET /api/kb/progreso/993816863596 HTTP/1.1" 200 OK
+19:02:31 INFO    postopfriend.rag · índice BM25 reconstruido: 9513 fragmentos, 30980 términos (kb_version=10)
+INFO:     127.0.0.1:57365 - "POST /api/kb/probar HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57366 - "DELETE /api/kb/documentos/af267b0949cf400f HTTP/1.1" 200 OK
+19:02:34 INFO    postopfriend.rag · índice BM25 reconstruido: 9512 fragmentos, 30974 términos (kb_version=11)
+INFO:     127.0.0.1:57367 - "POST /api/kb/verificar-olvido HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57368 - "POST /api/kb/probar HTTP/1.1" 200 OK

@@ -4,121 +4,120 @@ Borrando índice anterior…
 
 Índice RAG · 107 documentos · modelo sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 Descargando el modelo de embeddings si hace falta (~220 MB la primera vez)…
-Modelo listo en 5.5 s
+Modelo listo en 1.6 s
 ──────────────────────────────────────────────────────────────────────────────
-[  1/107] ok           7p    40f    5.9s  Acute Appendicitis Evidence Based Medicine G
-[  2/107] ok           2p     9f    0.9s  Acute Care Surgery Comprehensive Recovery Gu
-[  3/107] ok          11p    72f    5.2s  Adult appendicitis- Clinical practice guidel
-[  4/107] ok           5p    24f    1.7s  Apendicitis aguda perforada secundaria a cue
-[  5/107] ok          12p    70f    5.9s  Apendicitis aguda- Hallazgos radiológicos y 
-[  6/107] ok          12p    33f    2.8s  Apendicitis
-[  7/107] ok           8p    73f    6.6s  Appendicitis- Integrating evidence-based nur
-[  8/107] ok           1p    11f    1.2s  chapter APPENDICITIS
-[  9/107] ok           8p    41f    3.5s  Complications after appendectomy in patients
-[ 10/107] ok          13p   102f    8.5s  Diagnosis and Management of Acute Appendicit
-[ 11/107] ok          78p   252f   18.6s  diagnóstico, tratamiento y seguimiento del p
-[ 12/107] ok           4p    57f    4.0s  Disease severity and postoperative complicat
-[ 13/107] ok           9p    43f    3.1s  Epidemiología de la apendicitis aguda en Col
-[ 14/107] ok           5p    52f    3.9s  Establishing the need for clinical follow-up
-[ 15/107] ok          35p   139f    9.6s  FACTORES ASOCIADOS A LA INCIDENCIA DE APENDI
-[ 16/107] ok          53p   101f    6.9s  Identificación de microorganismos intrabdomi
-[ 17/107] ok           8p    49f    3.3s  Management of complications after appendecto
-[ 18/107] ok           1p     3f    0.2s  PLAN DE CUIDADO EN CASA DE PACIENTE EN POSTO
-[ 19/107] ok           1p     4f    0.2s  POST OPERATIVE INSTRUCTIONS FOR APPENDECTOMY
-[ 20/107] ok          11p    61f    4.3s  Postoperative antibiotic strategies in acute
-[ 21/107] ok          12p    57f    4.6s  Postoperative Complications Following Append
-[ 22/107] ok          15p    92f    7.4s  Postoperative Infections After Appendectomy 
+[  1/107] ok           7p    40f    2.3s  Acute Appendicitis Evidence Based Medicine G
+[  2/107] ok           2p     9f    0.3s  Acute Care Surgery Comprehensive Recovery Gu
+[  3/107] ok          11p    72f    3.1s  Adult appendicitis- Clinical practice guidel
+[  4/107] ok           5p    24f    1.0s  Apendicitis aguda perforada secundaria a cue
+[  5/107] ok          12p    70f    3.0s  Apendicitis aguda- Hallazgos radiológicos y 
+[  6/107] ok          12p    33f    1.4s  Apendicitis
+[  7/107] ok           8p    73f    3.2s  Appendicitis- Integrating evidence-based nur
+[  8/107] ok           1p    11f    0.4s  chapter APPENDICITIS
+[  9/107] ok           8p    41f    1.8s  Complications after appendectomy in patients
+[ 10/107] ok          13p   102f    4.5s  Diagnosis and Management of Acute Appendicit
+[ 11/107] ok          78p   252f   11.4s  diagnóstico, tratamiento y seguimiento del p
+[ 12/107] ok           4p    57f    2.7s  Disease severity and postoperative complicat
+[ 13/107] ok           9p    43f    1.8s  Epidemiología de la apendicitis aguda en Col
+[ 14/107] ok           5p    52f    2.4s  Establishing the need for clinical follow-up
+[ 15/107] ok          35p   139f    6.8s  FACTORES ASOCIADOS A LA INCIDENCIA DE APENDI
+[ 16/107] ok          53p   101f    5.1s  Identificación de microorganismos intrabdomi
+[ 17/107] ok           8p    49f    2.4s  Management of complications after appendecto
+[ 18/107] ok           1p     3f    0.1s  PLAN DE CUIDADO EN CASA DE PACIENTE EN POSTO
+[ 19/107] ok           1p     4f    0.1s  POST OPERATIVE INSTRUCTIONS FOR APPENDECTOMY
+[ 20/107] ok          11p    61f    3.2s  Postoperative antibiotic strategies in acute
+[ 21/107] ok          12p    57f    3.0s  Postoperative Complications Following Append
+[ 22/107] ok          15p    92f    4.9s  Postoperative Infections After Appendectomy 
 [ 23/107] SIN TEXTO    1p     0f    0.0s  REVISIÓN DE LA LITERATURA SOBRE LAAPENDICITI
-[ 24/107] ok          10p    67f    5.0s  Systematic Review and Meta-Analysis of Posto
-[ 25/107] ok          32p    57f    4.7s  A Guide to Enhancing Your Recovery After Bow
-[ 26/107] ok          16p   127f    9.1s  A Review of Postoperative Complications in C
-[ 27/107] ok          10p    58f    4.7s  Actualización en la tamización del cáncer co
-[ 28/107] ok          10p   106f    7.5s  Analyzing postoperative complications in col
-[ 29/107] ok           2p     7f    0.5s  Colon Cancer Care Before and After Surgery
-[ 30/107] ok          24p    31f    2.3s  Colon Cancer Surgery and Recovery
-[ 31/107] ok           4p    31f    2.2s  Colorectal Cancer- Postoperative Follow-up a
-[ 32/107] ok          10p    65f    4.5s  Determinación de los factores predictivos pa
-[ 33/107] ok          85p   317f   21.1s  Diagnóstico, estadificación, tratamiento y s
-[ 34/107] ok          10p    73f    5.2s  ecommendations for follow‑up of colorectal c
-[ 35/107] ok          12p    84f    6.4s  Efecto de la implementación de las recomenda
-[ 36/107] ok           8p    54f    4.1s  Effects of comprehensive care on psychologic
-[ 37/107] ok           6p    47f    3.3s  Experiencia en cirugía colorrectal en un hos
-[ 38/107] ok         269p  1275f   82.7s  GUÍA DE MANEJO PARA EL DIAGNÓSTICO, TRATAMIE
-[ 39/107] ok           7p    81f    5.3s  Health self-management experiences of colore
-[ 40/107] ok          10p    49f    3.3s  Post-operative Surveillance Following Curati
-[ 41/107] ok          17p    73f    4.7s  Programa de automanejo en adultos con cáncer
-[ 42/107] ok          13p    69f    4.6s  Protocolo de recuperación mejorada después d
-[ 43/107] ok          10p    71f    4.3s  Recommendations for follow‑up of colorectal 
-[ 44/107] ok          10p    57f    3.1s  Remote Follow‐Up After Colorectal Cancer Sur
-[ 45/107] ok          26p   188f    8.5s  Supervised Home-Based Exercise Intervention 
-[ 46/107] ok          11p    72f    3.3s  Supervivencia de cáncer colorrectal en un ce
-[ 47/107] ok           8p    42f    1.7s  The clinical impacts of postoperative compli
+[ 24/107] ok          10p    67f    3.1s  Systematic Review and Meta-Analysis of Posto
+[ 25/107] ok          32p    57f    2.5s  A Guide to Enhancing Your Recovery After Bow
+[ 26/107] ok          16p   127f    5.7s  A Review of Postoperative Complications in C
+[ 27/107] ok          10p    58f    2.7s  Actualización en la tamización del cáncer co
+[ 28/107] ok          10p   106f    4.8s  Analyzing postoperative complications in col
+[ 29/107] ok           2p     7f    0.2s  Colon Cancer Care Before and After Surgery
+[ 30/107] ok          24p    31f    1.5s  Colon Cancer Surgery and Recovery
+[ 31/107] ok           4p    31f    1.4s  Colorectal Cancer- Postoperative Follow-up a
+[ 32/107] ok          10p    65f    3.1s  Determinación de los factores predictivos pa
+[ 33/107] ok          85p   317f   14.0s  Diagnóstico, estadificación, tratamiento y s
+[ 34/107] ok          10p    73f    3.1s  ecommendations for follow‑up of colorectal c
+[ 35/107] ok          12p    84f    3.6s  Efecto de la implementación de las recomenda
+[ 36/107] ok           8p    54f    2.4s  Effects of comprehensive care on psychologic
+[ 37/107] ok           6p    47f    2.0s  Experiencia en cirugía colorrectal en un hos
+[ 38/107] ok         269p  1275f   57.6s  GUÍA DE MANEJO PARA EL DIAGNÓSTICO, TRATAMIE
+[ 39/107] ok           7p    81f    3.7s  Health self-management experiences of colore
+[ 40/107] ok          10p    49f    2.1s  Post-operative Surveillance Following Curati
+[ 41/107] ok          17p    73f    3.5s  Programa de automanejo en adultos con cáncer
+[ 42/107] ok          13p    69f    3.5s  Protocolo de recuperación mejorada después d
+[ 43/107] ok          10p    71f    3.2s  Recommendations for follow‑up of colorectal 
+[ 44/107] ok          10p    57f    2.6s  Remote Follow‐Up After Colorectal Cancer Sur
+[ 45/107] ok          26p   188f    8.6s  Supervised Home-Based Exercise Intervention 
+[ 46/107] ok          11p    72f    3.4s  Supervivencia de cáncer colorrectal en un ce
+[ 47/107] ok           8p    42f    1.9s  The clinical impacts of postoperative compli
 [ 48/107] ok           6p    39f    1.8s  The Role of Postoperative Surveillance in Co
-[ 49/107] ok           4p    11f    0.6s  Your Follow-up Care after Colorectal Cancer
-[ 50/107] ok          13p    51f    2.3s  002-GUIA-DE-CANCER-DE-CUELLO-UTERINO
-[ 51/107] ok          11p    78f    3.6s  1-s2.0-S0360301625060390-main
-[ 52/107] ok          25p   212f    9.7s  1-s2.0-S1048891X24221824-main
-[ 53/107] ok          23p    12f    1.4s  BOG303-Raul-Murillo
-[ 54/107] ok          76p   210f   14.9s  cervical-es-patient
-[ 55/107] ok          86p   363f   22.4s  cervix16nov-full
-[ 56/107] ok          17p    94f    5.6s  curroncol-29-00755
-[ 57/107] ok           4p    14f    0.7s  Cáncer-de-Cuello-Uterino-mar_2022
-[ 58/107] ok          72p   203f   11.2s  Documento
-[ 59/107] ok           7p    72f    3.9s  Factors-associated-with-delays-in-time-to-tr
-[ 60/107] ok          10p    64f    3.7s  fonc-14-1461296
-[ 61/107] ok           9p    63f    4.3s  fsurg-12-1588558
-[ 62/107] ok          10p    47f    2.9s  gom226c
-[ 63/107] ok          14p    47f    2.8s  Herramientas-Tecnica-Cancer-cuello-uterino-2
-[ 64/107] ok          10p    73f    3.8s  ijgm-18-6073
-[ 65/107] ok          22p   212f   10.8s  Intl J Gynecology   Obste - 2025 - Bhatla - 
-[ 66/107] ok          14p   107f    5.4s  main
+[ 49/107] ok           4p    11f    0.5s  Your Follow-up Care after Colorectal Cancer
+[ 50/107] ok          13p    51f    2.2s  002-GUIA-DE-CANCER-DE-CUELLO-UTERINO
+[ 51/107] ok          11p    78f    3.5s  1-s2.0-S0360301625060390-main
+[ 52/107] ok          25p   212f    9.3s  1-s2.0-S1048891X24221824-main
+[ 53/107] ok          23p    12f    0.5s  BOG303-Raul-Murillo
+[ 54/107] ok          76p   210f    9.2s  cervical-es-patient
+[ 55/107] ok          86p   363f   16.2s  cervix16nov-full
+[ 56/107] ok          17p    94f    4.6s  curroncol-29-00755
+[ 57/107] ok           4p    14f    0.6s  Cáncer-de-Cuello-Uterino-mar_2022
+[ 58/107] ok          72p   203f    9.5s  Documento
+[ 59/107] ok           7p    72f    3.1s  Factors-associated-with-delays-in-time-to-tr
+[ 60/107] ok          10p    64f    3.1s  fonc-14-1461296
+[ 61/107] ok           9p    63f    3.1s  fsurg-12-1588558
+[ 62/107] ok          10p    47f    2.1s  gom226c
+[ 63/107] ok          14p    47f    2.1s  Herramientas-Tecnica-Cancer-cuello-uterino-2
+[ 64/107] ok          10p    73f    3.4s  ijgm-18-6073
+[ 65/107] ok          22p   212f   10.7s  Intl J Gynecology   Obste - 2025 - Bhatla - 
+[ 66/107] ok          14p   107f    4.9s  main
 [ 67/107] ok           2p     8f    0.3s  prevencion-cancer-cuello-uterino
-[ 68/107] ok          15p   103f    4.9s  Terapéutica+del+cáncer+de+cuello+uterino,+un
-[ 69/107] ok           6p    45f    2.1s  Analysis of deficiencies in care following c
-[ 70/107] ok          10p    57f    2.8s  Colecistectomía subtotal en patología biliar
+[ 68/107] ok          15p   103f    4.6s  Terapéutica+del+cáncer+de+cuello+uterino,+un
+[ 69/107] ok           6p    45f    2.0s  Analysis of deficiencies in care following c
+[ 70/107] ok          10p    57f    2.6s  Colecistectomía subtotal en patología biliar
 [ 71/107] ok          15p    39f    1.7s  Colelitiasis y colecistitis aguda
-[ 72/107] ok          35p   161f    7.8s  CUIDADO ESTANDARIZADO EN EL PACIENTE QUIRURG
-[ 73/107] ok         110p   245f   10.6s  Diagnóstico y tratamiento del paciente con c
-[ 74/107] ok          60p   139f    5.7s  Estándar Clínico Basado en la Evidencia- Dia
-[ 75/107] ok           8p    52f    2.4s  Evaluation of Post-cholecystectomy Syndrome 
-[ 76/107] ok           3p    12f    0.5s  GUIA COLECISTITIS AGUDA
-[ 77/107] ok           9p    62f    2.6s  How to Predict Postoperative Complications A
-[ 78/107] ok           7p    71f    2.9s  Non-programmed rehospitalizations after chol
+[ 72/107] ok          35p   161f    7.5s  CUIDADO ESTANDARIZADO EN EL PACIENTE QUIRURG
+[ 73/107] ok         110p   245f   10.8s  Diagnóstico y tratamiento del paciente con c
+[ 74/107] ok          60p   139f    5.9s  Estándar Clínico Basado en la Evidencia- Dia
+[ 75/107] ok           8p    52f    2.3s  Evaluation of Post-cholecystectomy Syndrome 
+[ 76/107] ok           3p    12f    0.4s  GUIA COLECISTITIS AGUDA
+[ 77/107] ok           9p    62f    3.1s  How to Predict Postoperative Complications A
+[ 78/107] ok           7p    71f    3.0s  Non-programmed rehospitalizations after chol
 [ 79/107] ok           5p     5f    0.2s  PLAN DE CUIDADO COLECISTECTOMIA
-[ 80/107] ok           5p    39f    1.8s  Post-cholecystectomy syndrome in patients un
+[ 80/107] ok           5p    39f    1.6s  Post-cholecystectomy syndrome in patients un
 [ 81/107] ok           8p    48f    2.1s  Postcholecystectomy syndrome - management an
 [ 82/107] ok          10p    66f    2.9s  Postoperative care for patients undergoing c
 [ 83/107] ok           8p    45f    1.9s  Postoperative Outcomes Following Cholecystec
 [ 84/107] ok           8p    63f    2.7s  Risk Factors Associated with Post-Cholecyste
-[ 85/107] ok           7p    48f    1.9s  Safe postoperative outcomes following early 
-[ 86/107] ok          12p    92f    4.1s  Artroplastia total de rodilla- vías de abord
+[ 85/107] ok           7p    48f    2.0s  Safe postoperative outcomes following early 
+[ 86/107] ok          12p    92f    3.9s  Artroplastia total de rodilla- vías de abord
 [ 87/107] ok           5p    40f    1.6s  Artroplastía total de rodilla- grado de func
-[ 88/107] ok          11p   110f    4.5s  Care dependency and postoperative recovery a
-[ 89/107] ok           9p    76f    3.1s  Eficacia de diferentes técnicas de analgesia
+[ 88/107] ok          11p   110f    4.6s  Care dependency and postoperative recovery a
+[ 89/107] ok           9p    76f    3.2s  Eficacia de diferentes técnicas de analgesia
 [ 90/107] ok           6p    59f    2.5s  Enhanced recovery after surgery (ERAS) proto
 [ 91/107] ok          15p    87f    3.8s  Enhanced recovery after surgery in patients 
-[ 92/107] ok          89p   245f   12.1s  FACTORES ASOCIADOS CON LA INSATISFACCIÓN DE 
-[ 93/107] ok          10p    66f    2.8s  Impact of Outpatient Total Joint Replacement
-[ 94/107] ok          18p    69f    3.0s  MANEJO DE LAS COMPLICACIONES DE POSTOPERATOR
-[ 95/107] ok           6p    52f    2.1s  ncidence and timing of postoperative complic
-[ 96/107] ok          51p   126f    5.9s  Niveles de dolor, rigidez y funcionalidad en
-[ 97/107] ok           7p    78f    3.8s  Orthopaedic Surgery - 2019 - Li - Postoperat
-[ 98/107] ok           8p     8f    0.2s  PLAN CASERO REEMPLAZO TOTAL DE RODILLA
-[ 99/107] ok           7p    75f    3.7s  Postoperative Pain Management in Total Knee 
-[100/107] ok           7p    59f    3.1s  Pre- and Post-Operative Rehabilitation Inter
-[101/107] ok           9p    22f    1.1s  PROGRAMA DE PROFUNDIZACIÓN Y ENTRENAMIENTO A
-[102/107] ok          12p    25f    1.4s  Recom endaciones Programa Reemplazo Articula
-[103/107] ok          14p    88f    4.2s  Recovery and the use of postoperative physic
-[104/107] ok          28p   117f    5.1s  Reemplazo total de cadera Guía para el pacie
-[105/107] ok          55p    98f    5.4s  Reemplazo total de Cadera Guía para paciente
-[106/107] ok          14p    84f    4.2s  Total Hip Arthroplasty in Patients with BMI 
+[ 92/107] ok          89p   245f   10.2s  FACTORES ASOCIADOS CON LA INSATISFACCIÓN DE 
+[ 93/107] ok          10p    66f    2.9s  Impact of Outpatient Total Joint Replacement
+[ 94/107] ok          18p    69f    2.9s  MANEJO DE LAS COMPLICACIONES DE POSTOPERATOR
+[ 95/107] ok           6p    52f    2.3s  ncidence and timing of postoperative complic
+[ 96/107] ok          51p   126f    5.5s  Niveles de dolor, rigidez y funcionalidad en
+[ 97/107] ok           7p    78f    3.3s  Orthopaedic Surgery - 2019 - Li - Postoperat
+[ 98/107] ok           8p     8f    0.3s  PLAN CASERO REEMPLAZO TOTAL DE RODILLA
+[ 99/107] ok           7p    75f    3.3s  Postoperative Pain Management in Total Knee 
+[100/107] ok           7p    59f    2.6s  Pre- and Post-Operative Rehabilitation Inter
+[101/107] ok           9p    22f    1.0s  PROGRAMA DE PROFUNDIZACIÓN Y ENTRENAMIENTO A
+[102/107] ok          12p    25f    1.1s  Recom endaciones Programa Reemplazo Articula
+[103/107] ok          14p    88f    3.8s  Recovery and the use of postoperative physic
+[104/107] ok          28p   117f    4.9s  Reemplazo total de cadera Guía para el pacie
+[105/107] ok          55p    98f    4.5s  Reemplazo total de Cadera Guía para paciente
+[106/107] ok          14p    84f    3.6s  Total Hip Arthroplasty in Patients with BMI 
 [107/107] ok           9p    70f    3.0s  What’s important for recovery after a total 
 ──────────────────────────────────────────────────────────────────────────────
 106 indexados · 0 duplicados · 1 sin capa de texto · 0 con error
-9512 fragmentos · 9.4 min · kb_version=6
+9512 fragmentos · 7.1 min · kb_version=9
 Chroma: 9512 fragmentos de 106 documentos
-Compactado: 84 → 79 MB
-Índice en disco: 94 MB
+Índice en disco: 99 MB
 
 Incidencias (15):
   parcial    apendicitis/006-apendicitis.pdf
