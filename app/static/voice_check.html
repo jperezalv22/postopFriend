@@ -110,8 +110,10 @@
       try {
         const r = await fetch("/health");
         const s = await r.json();
+        // La ruta se muestra siempre: si dice «openrouter», estas cifras no son
+        // las que van al informe. Ver docs/estado-del-proyecto.md.
         linea("Servidor y clave de Groq", s.groq_configurado,
-          `LLM ${s.modelo_llm} · STT ${s.modelo_stt} · voz ${s.voz}`);
+          `LLM ${s.modelo_llm} (ruta ${s.ruta_llm || "groq"}) · STT ${s.modelo_stt} · voz ${s.voz}`);
         const c = s.conocimiento || {};
         linea("Conocimiento indexado", (c.fragmentos || 0) > 0,
           c.error || `${c.fragmentos} fragmentos de ${c.documentos} documentos`);

@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS llamadas (
     score_total       INTEGER,
     turnos            INTEGER DEFAULT 0,
     modelo_llm        TEXT,
+    ruta_llm          TEXT,                              -- groq|openrouter: por dónde salió de verdad
     acta_json         TEXT
 );
 
@@ -126,10 +127,24 @@ def transaccion() -> Iterator[sqlite3.Connection]:
         raise
 
 
+#: Columnas añadidas después de que existieran bases de datos en disco. `CREATE
+#: TABLE IF NOT EXISTS` no las agrega a una tabla que ya está, así que se aplican
+#: aparte. Un `duplicate column name` significa que ya estaba: no es un error.
+COLUMNAS_TARDIAS = (
+    ("llamadas", "ruta_llm", "TEXT"),
+)
+
+
 def inicializar() -> None:
     """Crea el esquema si falta. Idempotente; se llama en el arranque de FastAPI."""
     with transaccion() as con:
         con.executescript(ESQUEMA)
+        for tabla, columna, tipo in COLUMNAS_TARDIAS:
+            try:
+                con.execute(f"ALTER TABLE {tabla} ADD COLUMN {columna} {tipo}")
+            except sqlite3.OperationalError as e:
+                if "duplicate column" not in str(e).lower():
+                    raise
         con.execute(f"PRAGMA user_version = {VERSION_ESQUEMA}")
         con.execute(
             "INSERT OR IGNORE INTO kb_meta (clave, valor) VALUES ('kb_version', '1')"

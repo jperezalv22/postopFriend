@@ -100,11 +100,17 @@ def health():
         conocimiento = store.estado()
     except Exception as e:
         conocimiento = {"error": str(e)}
+    from app.agent.llm import modelo_en_uso
+
     return {
         "estado": "ok",
         "groq_configurado": bool(s.groq_api_key),
-        "modelo_llm": s.llm_model,
-        "modelo_stt": s.stt_model,
+        # El modelo que se va a pedir de verdad, no el declarado en config: con
+        # LLM_BACKEND=openrouter el identificador es otro, y esta respuesta es lo
+        # que muestra la página de salud de voz.
+        "modelo_llm": modelo_en_uso(),
+        "ruta_llm": s.llm_backend,
+        "modelo_stt": s.stt_model,   # el STT va siempre por Groq: OpenRouter no transcribe
         "voz": s.tts_voice,
         "conocimiento": conocimiento,
     }
