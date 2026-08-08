@@ -44,17 +44,39 @@ def test_el_servidor_entrega_cada_recurso_con_su_tipo():
                 assert tipo == esperado[sufijo], f"{nombre} se sirvió como {tipo}"
 
 
-def test_el_pegamento_y_el_wasm_son_de_la_misma_version():
-    """Mezclar versiones de onnxruntime da errores de memoria ilegibles."""
+def test_la_version_servida_es_la_que_el_bundle_del_vad_lleva_dentro():
+    """El bundle del VAD no usa `window.ort`: trae su propio onnxruntime empotrado.
+
+    Esa copia es la que importa el `.mjs` y carga el `.wasm`, así que la versión
+    la impone el bundle y no nosotros. Servir otra falla con mensajes que no
+    mencionan versiones: con el 1.19.2 el error era «t.getValue is not a
+    function», porque ese `.mjs` no exporta `getValue`.
+    """
+    dentro = vendor.version_de_ort_en_el_bundle()
+    assert dentro is not None, "no se pudo leer la versión de ORT en vad.bundle.min.js"
+    assert dentro == vendor.VERSION_ONNXRUNTIME, (
+        f"vad.bundle.min.js trae onnxruntime {dentro} pero se sirve "
+        f"{vendor.VERSION_ONNXRUNTIME}. Ajuste VERSION_ONNXRUNTIME y ejecute "
+        "`python scripts/vendorizar_voz.py --todo`."
+    )
+
+
+def test_el_pegamento_exporta_lo_que_el_runtime_le_pide():
+    """`getValue` es la función cuya ausencia rompía el arranque del VAD."""
     mjs = (vendor.directorio() / "ort-wasm-simd-threaded.mjs").read_text(
         encoding="utf-8", errors="ignore"
     )
     assert "ortWasmThreaded" in mjs, "no parece el pegamento de onnxruntime"
+    assert "getValue" in mjs, (
+        "el .mjs no expone getValue: es de una versión anterior a la que pide el VAD"
+    )
 
+
+def test_no_hay_dos_versiones_de_onnxruntime_en_juego():
+    """Dos ORT distintos en el mismo proyecto es lo que causó la confusión."""
     js = (vendor.directorio() / "ort.wasm.min.js").read_text(encoding="utf-8", errors="ignore")
     assert vendor.VERSION_ONNXRUNTIME in js, (
-        f"ort.wasm.min.js no declara {vendor.VERSION_ONNXRUNTIME}; "
-        "el .mjs se bajó fijado a esa versión"
+        f"ort.wasm.min.js no declara {vendor.VERSION_ONNXRUNTIME}"
     )
 
 

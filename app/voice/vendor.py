@@ -11,15 +11,26 @@ Fue justo lo que pasó con `ort-wasm-simd-threaded.mjs`. Desde onnxruntime-web
 tiempo de ejecución. Al no estar, el VAD caía a «pulsar para hablar» y la
 llamada dejaba de ser en tiempo real.
 
-Las versiones están fijadas porque el pegamento y el `.wasm` tienen que ser de
-la misma: mezclarlas da errores de memoria imposibles de leer.
+**Quién manda en la versión: `vad.bundle.min.js`.** El bundle del VAD no usa
+`window.ort`: trae su propia copia de onnxruntime empotrada, y es esa copia la
+que importa el `.mjs` y carga el `.wasm`. Así que la versión no la elegimos
+nosotros, la impone el bundle — hay que leerla de dentro y servir el par que
+pide. Servir otra da errores que no se parecen en nada a un problema de
+versiones: con el 1.19.2 el fallo era «t.getValue is not a function», porque ese
+`.mjs` no exporta `getValue` y el ORT de dentro del bundle lo llama.
+
+`ort.wasm.min.js` se mantiene en la misma versión aunque el VAD no lo use, para
+que no haya dos onnxruntime distintos dando vueltas por el proyecto.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
-VERSION_ONNXRUNTIME = "1.19.2"
+#: La impone `vad.bundle.min.js`, no se elige. Verificado por
+#: `version_de_ort_en_el_bundle()` y por las pruebas.
+VERSION_ONNXRUNTIME = "1.22.0"
 VERSION_VAD = "0.0.30"
 
 #: Archivo → (bytes mínimos esperados, para qué sirve).
@@ -28,8 +39,8 @@ VERSION_VAD = "0.0.30"
 REQUERIDOS: dict[str, tuple[int, str]] = {
     "ort.wasm.min.js": (40_000, "onnxruntime-web: el runtime que ejecuta el modelo"),
     "ort-wasm-simd-threaded.mjs": (
-        20_000,
-        "pegamento del wasm; el bundle lo importa dinámicamente",
+        15_000,
+        "pegamento del wasm; el ORT de dentro del bundle del VAD lo importa",
     ),
     "ort-wasm-simd-threaded.wasm": (5_000_000, "el binario del runtime"),
     "vad.bundle.min.js": (50_000, "@ricky0123/vad-web: la API MicVAD"),
@@ -43,6 +54,23 @@ def directorio() -> Path:
     from app.config import get_settings
 
     return get_settings().dir_raiz / "app" / "static" / "vendor"
+
+
+def version_de_ort_en_el_bundle(base: Path | None = None) -> str | None:
+    """Lee la versión de onnxruntime que `vad.bundle.min.js` lleva empotrada.
+
+    Es la única versión que vale: el bundle ignora `window.ort` y usa su copia.
+    Devuelve `None` si no se encuentra, porque un empaquetado futuro podría dejar
+    de incluir la cadena y eso no debe hacer fallar el arranque, solo la prueba.
+    """
+    base = base or directorio()
+    ruta = base / "vad.bundle.min.js"
+    if not ruta.is_file():
+        return None
+    texto = ruta.read_text(encoding="utf-8", errors="ignore")
+    # onnxruntime declara su versión como una cadena "1.22.0" dentro del bundle.
+    candidatas = sorted({v for v in re.findall(r'"(\d+\.\d+\.\d+)"', texto) if v.startswith("1.")})
+    return candidatas[0] if candidatas else None
 
 
 def faltantes(base: Path | None = None) -> list[str]:
