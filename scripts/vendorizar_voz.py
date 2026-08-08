@@ -26,7 +26,7 @@ ORT = f"{NPM}/onnxruntime-web@{vendor.VERSION_ONNXRUNTIME}/dist"
 VAD = f"{NPM}/@ricky0123/vad-web@{vendor.VERSION_VAD}/dist"
 
 ORIGEN: dict[str, str] = {
-    "ort.wasm.min.js": f"{ORT}/ort.wasm.min.js",
+    # Sin `ort.wasm.min.js`: con esa copia suelta cargada el VAD no arranca.
     "ort-wasm-simd-threaded.mjs": f"{ORT}/ort-wasm-simd-threaded.mjs",
     "ort-wasm-simd-threaded.wasm": f"{ORT}/ort-wasm-simd-threaded.wasm",
     "vad.bundle.min.js": f"{VAD}/bundle.min.js",

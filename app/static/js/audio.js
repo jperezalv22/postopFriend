@@ -67,15 +67,10 @@ class CapturaDeVoz {
   async _iniciarVad() {
     if (!window.vad?.MicVAD) throw new Error("bundle del VAD no cargado");
 
-    // Ojo: el bundle del VAD NO usa este `window.ort`. Trae su propio onnxruntime
-    // empotrado, y a ese se le habla con `onnxWASMBasePath` de abajo. Esto solo
-    // configura la copia suelta; se deja porque ambas son la misma versión y así
-    // no hay dos runtimes con rutas distintas. Ver app/voice/vendor.py.
-    if (window.ort?.env?.wasm) {
-      window.ort.env.wasm.wasmPaths = "/static/vendor/";
-      window.ort.env.wasm.numThreads = 1; // sin cabeceras COOP/COEP no hay hilos
-    }
-
+    // No existe `window.ort` y es a propósito: el bundle del VAD trae su propio
+    // onnxruntime empotrado, y con una segunda copia suelta cargada el VAD no
+    // arranca. La ruta del wasm se le pasa por `onnxWASMBasePath`, que es la que
+    // entiende su copia interna. Ver app/voice/vendor.py.
     this.vad = await window.vad.MicVAD.new({
       baseAssetPath: "/static/vendor/",
       onnxWASMBasePath: "/static/vendor/",

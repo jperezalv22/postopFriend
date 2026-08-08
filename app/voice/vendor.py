@@ -19,8 +19,10 @@ pide. Servir otra da errores que no se parecen en nada a un problema de
 versiones: con el 1.19.2 el fallo era «t.getValue is not a function», porque ese
 `.mjs` no exporta `getValue` y el ORT de dentro del bundle lo llama.
 
-`ort.wasm.min.js` se mantiene en la misma versión aunque el VAD no lo use, para
-que no haya dos onnxruntime distintos dando vueltas por el proyecto.
+**Aquí no va `ort.wasm.min.js`.** Es la distribución suelta de onnxruntime, y
+con ella cargada el VAD no arranca: dos runtimes compitiendo por el mismo wasm.
+Se comprobó quitándola (`/static/vad_debug.html`) y MicVAD arrancó. El VAD no la
+necesita para nada, así que no se sirve.
 """
 
 from __future__ import annotations
@@ -37,7 +39,6 @@ VERSION_VAD = "0.0.30"
 #: El tamaño mínimo detecta descargas truncadas y páginas de error de 404 bytes
 #: guardadas con el nombre correcto, que es el fallo que más despista.
 REQUERIDOS: dict[str, tuple[int, str]] = {
-    "ort.wasm.min.js": (40_000, "onnxruntime-web: el runtime que ejecuta el modelo"),
     "ort-wasm-simd-threaded.mjs": (
         15_000,
         "pegamento del wasm; el ORT de dentro del bundle del VAD lo importa",

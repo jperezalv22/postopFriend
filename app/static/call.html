@@ -80,7 +80,8 @@
     </aside>
   </main>
 
-  <script src="/static/vendor/ort.wasm.min.js"></script>
+  <!-- No se carga ort.wasm.min.js: vad.bundle.min.js trae su propio onnxruntime
+       y con los dos en juego el VAD no arranca. Ver app/voice/vendor.py. -->
   <script src="/static/vendor/vad.bundle.min.js"></script>
   <script src="/static/js/player.js"></script>
   <script src="/static/js/audio.js"></script>

@@ -88,14 +88,45 @@ class Reproductor {
       this.audio.play().catch(() => {});
       return;
     }
-    const cerrar = () => {
-      if (this.fuente && this.fuente.readyState === "open" && !this.buffer?.updating) {
-        try { this.fuente.endOfStream(); } catch (_) {}
-      } else if (this.fuente && this.fuente.readyState === "open") {
-        setTimeout(cerrar, 40);
-      }
-    };
-    cerrar();
+    this._cerrarFuente();
+  }
+
+  /* Cerrar el MediaSource es lo más delicado de este archivo, porque si no se
+   * cierra el <audio> se queda esperando datos que ya no van a llegar: ni
+   * `paused` ni `ended`, o sea `sonando` en true para siempre. Y eso no solo
+   * rompe el barge-in: Chrome sigue creyendo que hay audio saliendo y mantiene
+   * el cancelador de eco apretando el micrófono, así que la voz del paciente
+   * llega troceada y el VAD la descarta como «misfire». El síntoma es que la
+   * llamada se queda muda tras unos turnos.
+   *
+   * Hay tres formas de no llegar a `endOfStream()` y las tres pasan de verdad:
+   *   - `audio_fin` llega antes que `sourceopen` (readyState «closed»); es una
+   *     carrera que ganan las respuestas cortas y las cacheadas.
+   *   - quedan trozos en la cola sin volcar al SourceBuffer.
+   *   - el SourceBuffer está en pleno `updating`.
+   */
+  _cerrarFuente(intentos = 0) {
+    if (!this.fuente || !this.cerrado) return;
+
+    const estado = this.fuente.readyState;
+    if (estado === "ended") return;             // ya está cerrado
+    const listoParaCerrar =
+      estado === "open" && !this.cola.length && !this.buffer?.updating;
+
+    if (listoParaCerrar) {
+      try { this.fuente.endOfStream(); } catch (_) {}
+      return;
+    }
+
+    if (intentos < Reproductor.INTENTOS_DE_CIERRE) {
+      setTimeout(() => this._cerrarFuente(intentos + 1), Reproductor.ESPERA_DE_CIERRE_MS);
+      return;
+    }
+
+    // Se agotó la espera. Vale más quedarse sin la cola de audio que dejar el
+    // elemento colgado: mientras siga «sonando», el micrófono no vuelve.
+    console.warn("MediaSource no se pudo cerrar a tiempo; se libera el elemento");
+    this.detener();
   }
 
   /** Barge-in: el paciente habló encima del agente. Se corta en seco. */
@@ -109,8 +140,13 @@ class Reproductor {
   }
 
   get sonando() {
+    if (!this.audio.src) return false;   // tras `detener()` no hay nada sonando
     return !this.audio.paused && !this.audio.ended && this.audio.currentTime > 0;
   }
 }
+
+/** Cuánto se espera a que el MediaSource se deje cerrar: 100 × 40 ms = 4 s. */
+Reproductor.INTENTOS_DE_CIERRE = 100;
+Reproductor.ESPERA_DE_CIERRE_MS = 40;
 
 window.Reproductor = Reproductor;

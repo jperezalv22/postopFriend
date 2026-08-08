@@ -31,7 +31,8 @@
     </section>
   </main>
 
-  <script src="/static/vendor/ort.wasm.min.js"></script>
+  <!-- No se carga ort.wasm.min.js: vad.bundle.min.js trae su propio onnxruntime
+       y con los dos en juego el VAD no arranca. Ver app/voice/vendor.py. -->
   <script src="/static/vendor/vad.bundle.min.js"></script>
   <script src="/static/js/audio.js"></script>
   <script>
@@ -90,17 +91,13 @@
       }
 
       try {
-        if (window.ort?.env?.wasm) {
-          window.ort.env.wasm.wasmPaths = "/static/vendor/";
-          window.ort.env.wasm.numThreads = 1;
-        }
         const v = await window.vad.MicVAD.new({
           baseAssetPath: "/static/vendor/", onnxWASMBasePath: "/static/vendor/",
           model: "v5", onSpeechEnd: () => {},
         });
         v.destroy?.();
         linea("Silero VAD (empaquetado, sin CDN)", true,
-          `modelo v5 cargado desde /static/vendor/ · onnxruntime ${window.ort?.env?.versions?.common ?? window.ort?.version ?? "?"}`);
+          "modelo v5 cargado desde /static/vendor/ con su onnxruntime empotrado");
       } catch (e) {
         linea("Silero VAD", false,
           `${e.message} — la llamada caerá a «pulsar para hablar»` +

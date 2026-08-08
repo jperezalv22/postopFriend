@@ -166,6 +166,12 @@ async function iniciarLlamada() {
       estado.ws?.readyState === 1 &&
         estado.ws.send(JSON.stringify({ tipo: "primer_audio", turno_idx: turnoIdx, t }));
     },
+    // Sin esto, `turnoQueSuena` se queda con el último turno para siempre y el
+    // cliente manda un barge-in por cada vez que el paciente abre la boca, aunque
+    // el agente lleve callado un minuto. Se limpia cuando el audio termina de
+    // verdad, no cuando el servidor termina de mandarlo: entre una cosa y otra
+    // todavía se está oyendo al agente y la interrupción sigue siendo legítima.
+    alTerminar: () => { estado.turnoQueSuena = null; },
   });
 
   estado.captura = new CapturaDeVoz({

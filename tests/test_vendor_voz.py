@@ -72,19 +72,41 @@ def test_el_pegamento_exporta_lo_que_el_runtime_le_pide():
     )
 
 
-def test_no_hay_dos_versiones_de_onnxruntime_en_juego():
-    """Dos ORT distintos en el mismo proyecto es lo que causó la confusión."""
-    js = (vendor.directorio() / "ort.wasm.min.js").read_text(encoding="utf-8", errors="ignore")
-    assert vendor.VERSION_ONNXRUNTIME in js, (
-        f"ort.wasm.min.js no declara {vendor.VERSION_ONNXRUNTIME}"
+def test_ninguna_pagina_carga_la_copia_suelta_de_onnxruntime():
+    """Con `ort.wasm.min.js` cargado el VAD no arranca: dos runtimes compitiendo.
+
+    Se comprobó quitándolo en `/static/vad_debug.html`, donde MicVAD sí arranca.
+    El bundle del VAD trae su propio onnxruntime, así que la copia suelta no
+    aporta nada y rompe. Esta prueba impide que vuelva a colarse un `<script>`.
+    """
+    estaticos = vendor.directorio().parent
+    assert not (vendor.directorio() / "ort.wasm.min.js").exists(), (
+        "ort.wasm.min.js volvió a aparecer en vendor/"
     )
+    for pagina in estaticos.glob("*.html"):
+        html = pagina.read_text(encoding="utf-8")
+        assert 'src="/static/vendor/ort.wasm.min.js"' not in html, (
+            f"{pagina.name} carga la copia suelta de onnxruntime"
+        )
 
 
-def test_las_paginas_de_voz_cargan_el_runtime_antes_que_el_vad():
-    """El bundle del VAD lee `window.ort` al importarse: el orden importa."""
+def test_las_paginas_de_voz_cargan_el_bundle_del_vad():
+    """Sin el bundle, `iniciar()` cae a «pulsar para hablar» y G4 deja de ser real."""
     estaticos = vendor.directorio().parent
     for pagina in ("call.html", "voice_check.html"):
         html = (estaticos / pagina).read_text(encoding="utf-8")
-        assert html.index("ort.wasm.min.js") < html.index("vad.bundle.min.js"), (
-            f"{pagina} carga el VAD antes que onnxruntime"
-        )
+        assert "/static/vendor/vad.bundle.min.js" in html, f"{pagina} no carga el VAD"
+
+
+def test_el_reproductor_no_puede_quedarse_sonando_para_siempre():
+    """Si el MediaSource no se cierra, `sonando` no vuelve a false nunca.
+
+    Y entonces Chrome cree que sigue saliendo audio, mantiene el cancelador de
+    eco apretando el micrófono, y la voz del paciente llega tan troceada que el
+    VAD la descarta como «misfire»: la llamada se queda muda. El cierre tiene que
+    tener límite y una salida forzada.
+    """
+    js = (vendor.directorio().parent / "js" / "player.js").read_text(encoding="utf-8")
+    assert "INTENTOS_DE_CIERRE" in js, "el cierre del MediaSource no tiene límite"
+    assert "_cerrarFuente" in js, "falta el cierre con reintentos"
+    assert "this.detener()" in js, "no hay salida forzada si el cierre no llega"
