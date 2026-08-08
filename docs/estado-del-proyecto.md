@@ -224,6 +224,7 @@ azar y las busca en el código.
 | `static/call.html` + `js/` | Interfaz de llamada, VAD, reproductor con barge-in. |
 | `static/console.html` | Consola de conocimiento. Es la superficie donde se demuestra G5. |
 | `static/vendor/` | Silero VAD + onnxruntime **empaquetados**. Sin CDN. |
+| `voice/vendor.py` | Inventario de los 7 archivos de `static/vendor/` con su tamaño mínimo. Único sitio donde se fijan las versiones. Ver §8.9. |
 
 ### `evals/` — solo evaluación, nunca runtime
 
@@ -237,7 +238,8 @@ azar y las busca en el código.
 ### `scripts/`
 
 `_bootstrap.py` (UTF-8 + sys.path) · `doctor.py` · `check_models.py` (evidencia G3) ·
-`normalizar_corpus.py` · `build_index.py` · `precalentar.py` · `probar_voz.py`
+`normalizar_corpus.py` · `build_index.py` · `precalentar.py` · `probar_voz.py` ·
+`vendorizar_voz.py` (rebaja los recursos del VAD si falta alguno; el repo ya los trae)
 
 ---
 
@@ -508,6 +510,38 @@ Ahora conserva la primera frase y la última pregunta.
 
 `texto_crudo` iba en la metadata además del documento: 7.5 MB duplicados y dos
 sitios que podían discrepar. Ahora se deriva con `chunker.sin_cabecera()`.
+
+### 8.9 Faltaba un archivo del VAD y solo se veía en el navegador
+
+**Síntoma:** `/static/voice_check.html` marcaba **FALLA** en Silero VAD:
+`no available backend found. ERR: [wasm] TypeError: Failed to fetch dynamically
+imported module: .../ort-wasm-simd-threaded.mjs`. La llamada caía a «pulsar para
+hablar» — es decir, **G4 dejaba de ser en tiempo real**.
+
+**Causa real:** desde onnxruntime-web 1.19 el `.wasm` ya no se carga solo; el bundle
+importa en tiempo de ejecución un módulo de pegamento `.mjs`. Se vendorizó el `.wasm`
+y el `.js`, pero no el `.mjs`.
+
+**Por qué nadie lo vio antes:** las 161 pruebas pasaban y `doctor.py` daba todo en
+verde. Ninguna de las dos cosas mira el directorio `vendor/`, porque el fallo no
+ocurre en Python: ocurre en el navegador, en mitad de la demostración.
+
+**Segundo riesgo, invisible aquí:** en Windows `mimetypes` resuelve las extensiones
+leyendo el registro, así que el tipo de `.mjs` depende de qué haya instalado la
+máquina. En esta resolvía bien; en una limpia puede dar `None`, StaticFiles responde
+`text/plain` y el navegador rechaza el módulo por MIME estricto. Habría funcionado
+aquí y fallado en el portátil del jurado. `app/main.py` lo fija con
+`mimetypes.add_type` en vez de confiar en el registro.
+
+**Corrección:** `app/voice/vendor.py` es el inventario único (7 archivos, con tamaño
+mínimo para detectar descargas truncadas y páginas de error guardadas con el nombre
+correcto). Lo comprueban `doctor.py` y `tests/test_vendor_voz.py`, que además
+verifica el `Content-Type` servido y que `call.html` cargue onnxruntime **antes** que
+el VAD. `scripts/vendorizar_voz.py` lo reconstruye con las versiones fijadas.
+
+**La lección:** todo lo que corre en el navegador es un punto ciego para una suite de
+pruebas en Python. Si una compuerta depende de ello, hace falta una prueba que mire
+los archivos y las cabeceras, no solo el código.
 
 ---
 

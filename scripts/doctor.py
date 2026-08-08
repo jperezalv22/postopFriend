@@ -172,6 +172,27 @@ def revisar_tts(s) -> None:
         marcar(AVISO, "TTS (edge-tts)", f"{type(e).__name__}: {e} — se usará el respaldo del navegador")
 
 
+def revisar_vendor() -> None:
+    """El VAD vive en el navegador: si falta un archivo, Python no se entera."""
+    from app.voice import vendor
+
+    problemas = vendor.faltantes()
+    if not problemas:
+        marcar(
+            OK,
+            "Recursos de voz empaquetados",
+            f"{len(vendor.REQUERIDOS)} archivos en app/static/vendor/ "
+            f"(onnxruntime {vendor.VERSION_ONNXRUNTIME}, vad {vendor.VERSION_VAD})",
+        )
+        return
+    marcar(
+        FALLO,
+        "Recursos de voz empaquetados",
+        "\n         ".join(problemas)
+        + "\n         arréglelo con: python scripts/vendorizar_voz.py",
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sin-red", action="store_true", help="omite las comprobaciones en línea")
@@ -188,6 +209,7 @@ def main() -> int:
     revisar_dataset(s)
     revisar_modelo_embeddings(s)
     revisar_indice(s)
+    revisar_vendor()
     revisar_clave(s)
     if not args.sin_red:
         revisar_groq_vivo(s)

@@ -10,6 +10,7 @@ frontend sin compilar no cuesta un solo punto de rúbrica ("la estética no punt
 from __future__ import annotations
 
 import logging
+import mimetypes
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -28,6 +29,14 @@ logging.basicConfig(
 log = logging.getLogger("postopfriend")
 
 ESTATICOS = get_settings().dir_raiz / "app" / "static"
+
+# En Windows, `mimetypes` resuelve las extensiones leyendo el registro, así que el
+# tipo de `.mjs` depende de qué tenga instalado la máquina. Si no lo conoce,
+# StaticFiles responde `text/plain` y el navegador rechaza el módulo por la
+# comprobación estricta de MIME: onnxruntime no carga y el VAD cae a «pulsar para
+# hablar». Aquí funcionaba y en una máquina limpia no: se fija explícitamente.
+mimetypes.add_type("text/javascript", ".mjs")
+mimetypes.add_type("application/wasm", ".wasm")
 
 
 @asynccontextmanager
