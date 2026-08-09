@@ -23,6 +23,11 @@ logs/*.jsonl
 # Caché de evaluaciones (se regenera; los resultados sí se versionan)
 evals/.cache/
 
+# Caché de fastembed. Son 224 MB de modelo ONNX: por encima del tope duro de 100 MB
+# por archivo de GitHub, así que versionarlo no es que pese, es que impide el push.
+# `embedder.py` lo pasa como cache_dir y fastembed lo descarga solo en el primer uso.
+data/modelos/
+
 # OJO: data/chroma/ y data/bm25.pkl SÍ se versionan a propósito.
 # Son el índice pre-construido que permite cumplir la compuerta G2 (<15 min).
 
@@ -33,3 +38,8 @@ ParticipantArtifacts-main/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Borradores y salidas locales que no pertenecen al repo
+.impeccable/
+mockup-panel-llamada.html
+acta_call_*.md
