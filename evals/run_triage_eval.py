@@ -227,7 +227,9 @@ async def main_async(args) -> int:
     if args.solo_cache:
         casos = [c for c in casos if clave_cache(c).exists()]
 
-    print(f"\n{len(casos)} casos · extractor real + motor real · {get_settings().llm_model}")
+    # El modelo que va a extraer de verdad, no el declarado: con LLM_BACKEND=gemini
+    # esta línea anunciaba `llama-3.3-70b-versatile` mientras medía otra cosa.
+    print(f"\n{len(casos)} casos · extractor real + motor real · {modelo_del_cache()}")
     en_cache = sum(1 for c in casos if clave_cache(c).exists())
     print(f"{en_cache} en caché, {len(casos) - en_cache} por consultar a la API")
 
@@ -279,17 +281,24 @@ async def main_async(args) -> int:
               "  los 160: se pidieron primero los rojos, así que la mezcla de etiquetas de\n"
               "  esta muestra no es la del dataset. Cítela siempre con estos denominadores.")
 
-    # Qué ruta pidió cada medición. Las dos las ejecuta Groq —`openrouter` va fijado
-    # a Groq y llm.py descarta la respuesta si el enrutado se desvía—, así que la
-    # mezcla no parte la muestra en dos poblaciones. Se declara igual: el informe no
-    # debería tener que fiarse de esa cadena de razonamiento sin ver el conteo.
+    # Qué ruta pidió cada medición. `groq` y `openrouter` ejecutan el mismo modelo
+    # —OpenRouter va fijado a Groq y llm.py descarta la respuesta si el enrutado se
+    # desvía—, así que mezclarlas no parte la muestra en dos poblaciones. Cualquier
+    # otra ruta sí es otro modelo, y entonces la tabla de abajo describe una mezcla:
+    # decirlo aquí es la diferencia entre una cifra citable y una que engaña.
     rutas: dict[str, int] = {}
     for r in resultados:
         clave = r.detalle.get("backend", "groq")
         rutas[clave] = rutas.get(clave, 0) + 1
-    if len(rutas) > 1 or "groq" not in rutas:
-        print("\n  Ruta de cada medición (la inferencia es de Groq en todas): "
-              + " · ".join(f"{k} {v}" for k, v in sorted(rutas.items())))
+    ajenas = sorted(set(rutas) - {"groq", "openrouter"})
+    if len(rutas) > 1 or ajenas:
+        detalle = " · ".join(f"{k} {v}" for k, v in sorted(rutas.items()))
+        if ajenas:
+            print(f"\n  AVISO: la muestra mezcla modelos distintos ({detalle}).\n"
+                  "  Las cifras de abajo NO describen un solo sistema. Separe por ruta\n"
+                  "  antes de citarlas en el informe.")
+        else:
+            print(f"\n  Ruta de cada medición (la inferencia es de Groq en todas): {detalle}")
 
     resumen = resumir(resultados)
     resumen["cobertura"] = {e: {"medidos": m, "total": t} for e, (m, t) in cob.items()}
