@@ -32,12 +32,12 @@ class TestRecorridoNormal:
         ctx.estado_clinico.dolor_nrs = var(3)
         assert transicion(ctx, Intencion.RESPONDE) is Estado.PROTOCOLO
 
-    def test_pasa_a_evaluacion_cuando_no_queda_nada_por_preguntar(self):
+    def test_resuelve_evaluacion_automaticamente_al_terminar_protocolo(self):
         ctx = Contexto(estado=Estado.PROTOCOLO)
         e = ctx.estado_clinico
         e.dolor_nrs, e.fiebre_c, e.herida = var(2), var(36.8), var("normal")
         e.movilidad, e.apetito, e.sueno = var("normal"), var("normal"), var("normal")
-        assert transicion(ctx, Intencion.RESPONDE) is Estado.EVALUACION
+        assert transicion(ctx, Intencion.RESPONDE, decision(Nivel.VERDE)) is Estado.CIERRE
 
     def test_verde_cierra_sin_escalar(self):
         ctx = Contexto(estado=Estado.EVALUACION)

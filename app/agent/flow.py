@@ -213,12 +213,8 @@ def transicion(ctx: Contexto, intencion: Intencion, decision: Decision | None = 
             ctx.estado = Estado.ESCALAR
 
         case Estado.EVALUACION:
-            if decision is None or decision.nivel is Nivel.INDETERMINADO:
-                ctx.estado = Estado.INDAGACION
-            elif decision.nivel is Nivel.VERDE:
-                ctx.estado = Estado.CIERRE
-            else:
-                ctx.estado = Estado.ESCALAR
+            # La evaluación ahora se resuelve al final del turno para no atrapar la llamada
+            pass
 
         case Estado.ESCALAR:
             ctx.estado = Estado.CIERRE
@@ -229,7 +225,22 @@ def transicion(ctx: Contexto, intencion: Intencion, decision: Decision | None = 
         case Estado.ACTA:
             ctx.estado = Estado.FIN
 
-    return _registrar(ctx, anterior)
+    _registrar(ctx, anterior)
+
+    # Las transiciones automáticas que no deben esperar a que el paciente hable de nuevo.
+    # Si la llamada se quedara en EVALUACION, el LLM no tendría qué preguntar, el
+    # paciente colgaría y nunca se llegaría a ESCALAR/CIERRE.
+    if ctx.estado is Estado.EVALUACION:
+        anterior = ctx.estado
+        if decision is None or decision.nivel is Nivel.INDETERMINADO:
+            ctx.estado = Estado.INDAGACION
+        elif decision.nivel is Nivel.VERDE:
+            ctx.estado = Estado.CIERRE
+        else:
+            ctx.estado = Estado.ESCALAR
+        _registrar(ctx, anterior)
+
+    return ctx.estado
 
 
 def _registrar(ctx: Contexto, anterior: Estado) -> Estado:
