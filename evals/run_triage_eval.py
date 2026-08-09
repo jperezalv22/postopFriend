@@ -195,6 +195,14 @@ async def main_async(args) -> int:
     if not args.orden_dataset:
         casos = ordenar_por_valor(casos)
 
+    # Recalcular sobre lo ya medido, sin tocar la API. La corrida está pensada para
+    # ir a trozos, así que entre trozo y trozo hace falta poder leer las cifras de lo
+    # que ya entró —y poder rehacerlas si cambia la validación o el motor— sin que
+    # los casos pendientes gasten cuota, ni reloj en agotar sus reintentos contra un
+    # proveedor sin saldo. La cobertura se sigue declarando contra el dataset entero.
+    if args.solo_cache:
+        casos = [c for c in casos if clave_cache(c).exists()]
+
     print(f"\n{len(casos)} casos · extractor real + motor real · {get_settings().llm_model}")
     en_cache = sum(1 for c in casos if clave_cache(c).exists())
     print(f"{en_cache} en caché, {len(casos) - en_cache} por consultar a la API")
@@ -331,6 +339,9 @@ def main() -> int:
                     help="pide los casos en el orden del dataset en vez de rojo→amarillo→verde. "
                          "Solo tiene sentido si la cuota alcanza para todos")
     ap.add_argument("--sin-cache", action="store_true")
+    ap.add_argument("--solo-cache", action="store_true",
+                    help="mide solo los casos ya medidos, sin llamar a la API. Para leer "
+                         "las cifras de una corrida a medias sin gastar cuota")
     ap.add_argument("--fallos", action="store_true")
     ap.add_argument("--guardar", action="store_true")
     return asyncio.run(main_async(ap.parse_args()))
