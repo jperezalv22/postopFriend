@@ -12,12 +12,25 @@ la ingesta devolvía éxito. Con el jurado subiendo su PDF en directo, G5 se hab
 caído sin que nada pareciera roto.
 
 De ahí la regla que codifica este archivo: **el artefacto que se entrega también se
-prueba.** Una prueba contra una copia pristina no dice nada del archivo que va a
-correr el jurado.
+prueba.** Una prueba contra un índice *recién construido* no dice nada del archivo
+que va a correr el jurado: uno nuevo siempre está sano.
+
+Sobre una **copia** del entregado, no sobre el original. Estas pruebas insertan y
+borran de verdad —no hay otra forma de comprobar que el archivo acepta escrituras—,
+y mientras lo hacían sobre `data/chroma/` una corrida interrumpida a mitad de
+escritura dejaba el índice del repo inservible. Basta un Ctrl-C. El daño es mudo:
+`count()` empieza a reventar con «Failed to apply logs to the hnsw segment writer» y
+nada apunta a que lo rompió la propia suite. Ocurrió.
+
+La copia no debilita la prueba, porque lo que se quiere detectar viaja **dentro** del
+archivo: `max_seq_id` por delante de la cola se copia igual que el resto de los bytes.
+Lo único que se pierde es la posibilidad de estropear el original.
 """
 
+import shutil
 import uuid
 
+import chromadb
 import pytest
 
 from app.config import get_settings
@@ -26,12 +39,25 @@ from app.store import db
 
 
 @pytest.fixture(scope="module")
-def indice():
+def indice(tmp_path_factory):
     s = get_settings()
     if not (s.dir_chroma / "chroma.sqlite3").exists():
         pytest.skip("no hay índice construido; corra scripts/build_index.py")
+
+    copia = tmp_path_factory.mktemp("indice_entregado") / "chroma"
+    shutil.copytree(s.dir_chroma, copia)
+    cliente = chromadb.PersistentClient(path=str(copia))
+
     db.inicializar()
-    return store.coleccion()
+    with pytest.MonkeyPatch.context() as mp:
+        # Todo el módulo `store` pasa por `_cliente()`, así que sustituirlo redirige
+        # también a `contar_fragmentos()` y a `indice_lexico()` sin tocar sus firmas.
+        mp.setattr(store, "_cliente", lambda: cliente)
+        # El BM25 se cachea por `kb_version`, que no cambia al copiar: sin invalidar,
+        # el léxico seguiría derivado del índice real y la comparación no probaría nada.
+        store.invalidar_indice()
+        yield store.coleccion()
+    store.invalidar_indice()
 
 
 class TestIndiceEntregado:
