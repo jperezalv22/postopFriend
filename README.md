@@ -211,6 +211,51 @@ cuesta una llamada de enfermería, un falso negativo cuesta un reingreso. No hay
 umbral que separe verde de amarillo sin perder amarillos, porque las dos clases se
 solapan en el rango de score 2–3 del propio dataset.
 
+### Sistema completo: extractor + motor sobre los diálogos
+
+La tabla de arriba es el **techo**, no el resultado. Esta es la que describe lo que
+el paciente recibe: el extractor lee el diálogo real, con lo que el paciente dijo y
+solo eso, y el motor decide sobre lo extraído. Reproducible con
+`python evals/run_triage_eval.py`.
+
+Cobertura parcial y declarada: **rojo 24/24 · amarillo 41/50 · verde 40/246** (n=105).
+Los casos se piden en orden rojo→amarillo→verde, así que la muestra está sesgada
+hacia lo grave a propósito y **la exactitud global no es comparable** con la del
+motor. Los recalls por nivel sí son válidos sobre esos denominadores.
+
+| esperado \ obtenido | verde | amarillo | rojo |
+|---|---:|---:|---:|
+| **verde** (n=40) | 27 | 13 | 0 |
+| **amarillo** (n=41) | 2 | 39 | 0 |
+| **rojo** (n=24) | 1 | 9 | 14 |
+
+| | |
+|---|---:|
+| Exactitud (muestra sesgada) | 76.2 % |
+| Recall de rojo | **58.3 %** |
+| Recall de amarillo | 95.1 % |
+
+**El 58.3 % pide leerse con la columna de al lado.** De los 24 casos rojos, 14 se
+clasificaron rojo y **9 se escalaron a amarillo**: son pacientes de arquetipo
+`evasivo` que nunca dieron el dato. Se verificó uno por uno — en **ninguno** de esos
+9 el paciente dijo la cifra que el dataset da por real. El extractor devuelve `null`
+en vez de inventarla, y el motor no cierra en verde: escala por precaución
+(`app/triage/engine.py`, «no saber si hay fiebre no es lo mismo que saber que no la
+hay»). **23 de 24 rojos terminan escalados.**
+
+El caso 24 sí es un fallo, y queda documentado: `caso_tray_pac_42_00017_7`, paciente
+`minimizador_sintomas` con dolor real 9 y fiebre 37.9, que dijo *«un poquito molesto
+no más, uno aguanta»* y *«marcó como 37 y algo»*. El extractor leyó 3 y 37.0. La
+lectura es defendible sobre lo dicho, pero **«37 y algo» → 37.0 redondea hacia el
+lado inseguro**. Resolver los numéricos ambiguos hacia arriba está en
+[limitaciones conocidas](docs/informe-final.md#11-limitaciones-conocidas-y-trabajo-siguiente):
+no se cambió aquí porque el caché de la evaluación se indexa por el hash del prompt
+y tocarlo invalidaría las 105 mediciones, sin cuota para rehacerlas antes del cierre.
+
+La brecha entre 100 % (motor) y 58.3 % (sistema) **no es un defecto de las reglas**:
+es el costo de que un paciente real no siempre dice lo que le pasa. Esa es la
+diferencia entre evaluar un clasificador y evaluar una conversación.
+
 **Los moduladores de riesgo van apagados, con el dato delante.** Encendidos, la
 exactitud cae a 82.5 % y las falsas alarmas se duplican (28 en vez de 12), sin ganar
 un punto de sensibilidad. La causa es que las etiquetas del dataset no tienen en
