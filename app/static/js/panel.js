@@ -29,10 +29,27 @@ const usd = (v) => {
 const hora = (iso) => (iso ? String(iso).slice(11, 19) : "—");
 const fecha = (iso) => (iso ? String(iso).slice(0, 16).replace("T", " ") : "—");
 
-function metrica(num, etiqueta, color) {
+/* La unidad va pegada al número y en pequeño.
+ *
+ * «1 840» y «1 840 ms» ocupan lo mismo en la tarjeta y solo el segundo se puede
+ * citar en el informe sin volver a mirar de dónde salió. */
+function metrica(num, etiqueta, color, unidad) {
   const estilo = color ? ` style="color:var(--${color})"` : "";
-  return `<div class="metrica"><div class="num"${estilo}>${num}</div>
+  const uni = unidad ? `<span class="unidad">${unidad}</span>` : "";
+  return `<div class="metrica"><div class="num"${estilo}>${num}${uni}</div>
           <div class="eti">${etiqueta}</div></div>`;
+}
+
+/* Estado vacío que dice qué hacer para llenarlo. Un panel recién clonado está
+ * vacío entero, y «—» en seis tarjetas parece un fallo cuando es lo esperado.
+ *
+ * `icono` es el nombre de un símbolo del sprite de panel.html, sin el prefijo
+ * `i-`. Antes era un emoji, pero lo pinta la fuente del sistema con sus propios
+ * colores y basta un 📞 rosa para romper una paleta de dos tonos. */
+function guia(icono, titulo, texto) {
+  return `<div class="vacio-guia">
+            <span class="caja-ico" aria-hidden="true"><svg class="ico"><use href="#i-${icono}"/></svg></span>
+            <strong>${titulo}</strong>${texto}</div>`;
 }
 
 function variable(nombre, valor, evidencia) {
@@ -62,7 +79,8 @@ function pitar() {
 function pintarAlertas(alertas) {
   const caja = $("alertas");
   if (!alertas.length) {
-    caja.innerHTML = `<p class="vacio">Ninguna alerta registrada.</p>`;
+    caja.innerHTML = guia("check", "Ninguna alerta pendiente",
+      "Aquí aparece cada llamada que el motor decidió escalar, con su motivo y su score.");
     return;
   }
 
@@ -87,8 +105,8 @@ function pintarAlertas(alertas) {
           score ${a.score_total ?? "—"}
           ${atendida
             ? `<span class="vacio"> · atendida</span>`
-            : `<button data-atender="${escapar(a.alerta_id)}"
-                 style="margin-left:8px;padding:4px 9px;font-size:12px">Atender</button>`}
+            : `<button class="chico" data-atender="${escapar(a.alerta_id)}"
+                 style="margin-left:8px">Marcar atendida</button>`}
         </div>
       </div>`;
   }).join("");
@@ -106,20 +124,22 @@ function pintarAlertas(alertas) {
 // ─── Latencia ───────────────────────────────────────────────────────────────
 
 function pintarLatencia(l) {
+  const hay = l.n > 0;
   const objetivo = l.p50 !== null && l.p50 <= 1500 ? "verde" : "amarillo";
   $("latencia").innerHTML = [
-    metrica(ms(l.p50), "P50 ms", l.p50 === null ? null : objetivo),
-    metrica(ms(l.p95), "P95 ms"),
-    metrica(ms(l.min), "mín ms"),
-    metrica(ms(l.max), "máx ms"),
+    metrica(ms(l.p50), "mediana (P50)", l.p50 === null ? null : objetivo, hay ? "ms" : ""),
+    metrica(ms(l.p95), "cola lenta (P95)", null, hay ? "ms" : ""),
+    metrica(ms(l.min), "el mejor turno", null, hay ? "ms" : ""),
+    metrica(ms(l.max), "el peor turno", null, hay ? "ms" : ""),
     metrica(l.n, "turnos medidos"),
-    metrica(pct(l.bajo_objetivo), "≤ 1.5 s", l.bajo_objetivo >= 0.8 ? "verde" : null),
+    metrica(pct(l.bajo_objetivo), "bajo el objetivo de 1,5 s",
+            l.bajo_objetivo >= 0.8 ? "verde" : null),
   ].join("");
 
-  if (!l.n) {
-    $("histograma").innerHTML =
-      `<p class="vacio">Todavía no hay turnos con latencia medida. Se registra al
-       recibir del navegador el aviso de que el audio empezó a sonar.</p>`;
+  if (!hay) {
+    $("histograma").innerHTML = guia("reloj", "Todavía no hay turnos medidos",
+      "La latencia se sella cuando el navegador avisa de que el audio empezó a sonar: "
+      + "haga una llamada desde la pantalla principal y vuelva aquí.");
     return;
   }
 
@@ -146,19 +166,24 @@ function pintarEtapas(etapas) {
     ? nombres.map((n) =>
         variable(n, `${ms(etapas[n].p50)} ms`,
                  `P95 ${ms(etapas[n].p95)} ms · ${etapas[n].n} turnos`)).join("")
-    : `<p class="vacio">Sin desglose: se registra desde la primera llamada nueva.</p>`;
+    : `<p class="vacio">Sin desglose todavía: se registra desde la primera llamada nueva.</p>`;
 }
 
 // ─── Consumo y costo ────────────────────────────────────────────────────────
 
 function pintarConsumo(c, costo, tarifa) {
+  // Dos por turno es el presupuesto declarado. Si sube, algo está llamando al
+  // modelo de más y el costo proyectado deja de valer.
+  const porTurno = c.llm_calls_por_turno;
+  const colorTurno = porTurno == null ? null : (porTurno <= 2.2 ? "verde" : "amarillo");
+
   $("consumo").innerHTML = [
-    metrica(c.tokens_in.toLocaleString("es"), "tokens in"),
-    metrica(c.tokens_out.toLocaleString("es"), "tokens out"),
+    metrica(c.tokens_in.toLocaleString("es"), "tokens de entrada"),
+    metrica(c.tokens_out.toLocaleString("es"), "tokens de salida"),
     metrica(c.llm_calls, "llamadas al LLM"),
-    metrica(c.llm_calls_por_turno ?? "—", "por turno"),
-    metrica(c.rag_consultas, "consultas RAG"),
-    metrica(`${c.audio_paciente_s}s`, "audio paciente"),
+    metrica(porTurno ?? "—", "por turno · presupuesto 2", colorTurno),
+    metrica(c.rag_consultas, "consultas al RAG"),
+    metrica(c.audio_paciente_s, "audio del paciente", null, "s"),
   ].join("");
 
   $("costo").innerHTML = [
@@ -177,7 +202,8 @@ function pintarIncidencias(inc) {
   const claves = Object.keys(inc);
   $("incidencias").innerHTML = claves.length
     ? claves.map((k) => variable(escapar(k), inc[k])).join("")
-    : `<p class="vacio">Ninguna incidencia registrada.</p>`;
+    : guia("check", "Ninguna incidencia registrada",
+           "Ni fallos de API, ni transcripciones vacías, ni guardarraíles disparados.");
 }
 
 // ─── Historial ──────────────────────────────────────────────────────────────
@@ -185,7 +211,8 @@ function pintarIncidencias(inc) {
 function pintarHistorial(llamadas) {
   const caja = $("historial");
   if (!llamadas.length) {
-    caja.innerHTML = `<p class="vacio">Aún no hay llamadas con esta ruta.</p>`;
+    caja.innerHTML = guia("telefono", "Aún no hay llamadas con esta ruta",
+      "Cambie el filtro de arriba o haga una llamada desde la pantalla principal.");
     return;
   }
   caja.innerHTML = llamadas.map((l) => `
@@ -205,9 +232,10 @@ function pintarHistorial(llamadas) {
         </div>
       </div>
       <div class="valor">
-        <a href="/api/llamadas/${encodeURIComponent(l.call_id)}/acta.md">acta .md</a>
-        ·
-        <a href="/api/llamadas/${encodeURIComponent(l.call_id)}/acta">json</a>
+        <a class="boton chico" href="/api/llamadas/${encodeURIComponent(l.call_id)}/acta.md"
+           title="Descargar el acta en Markdown"><svg class="ico chico" aria-hidden="true"><use href="#i-bajar"/></svg>acta</a>
+        <a class="boton chico" href="/api/llamadas/${encodeURIComponent(l.call_id)}/acta"
+           target="_blank" rel="noopener" title="Ver el acta completa en JSON">json</a>
       </div>
     </div>`).join("");
 }

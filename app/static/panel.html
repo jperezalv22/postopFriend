@@ -1,86 +1,168 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-tema="monitor">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>postopFriend · Panel</title>
+  <title>postopFriend · panel</title>
   <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📊</text></svg>">
+  <script>
+    /* Antes de pintar. Ver el comentario en call.html y /static/js/tema.js. */
+    (function () {
+      try {
+        var t = localStorage.getItem("postopfriend-tema");
+        if (t === "monitor" || t === "clinico") document.documentElement.dataset.tema = t;
+      } catch (e) { /* almacenamiento bloqueado: se queda el de por defecto */ }
+    })();
+  </script>
 </head>
 <body>
+  <!-- Ver la nota del sprite en call.html: en línea y no en un `.svg` aparte. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-grafico" viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><rect x="5" y="11" width="4" height="7" rx="1"/><rect x="10" y="5" width="4" height="13" rx="1"/><rect x="15" y="14" width="4" height="4" rx="1"/></symbol>
+      <symbol id="i-campana" viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-3 8-3 8h18s-3-1.5-3-8"/><path d="M13.7 20.5a2 2 0 0 1-3.4 0"/></symbol>
+      <symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+      <symbol id="i-moneda" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.6 9h-3.9a1.9 1.9 0 0 0 0 3.8h2.6a1.9 1.9 0 0 1 0 3.8H9.4M12 7.2v9.6"/></symbol>
+      <symbol id="i-incidencia" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16v.5"/></symbol>
+      <symbol id="i-historial" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3"/><path d="M3 4.5v4h4"/><path d="M12 8v4.4l3 1.8"/></symbol>
+      <symbol id="i-refrescar" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4h-4"/></symbol>
+      <!-- Los tres siguientes no aparecen en este HTML: los pinta panel.js, en
+           los estados vacíos (`guia()`) y en los enlaces al acta. -->
+      <symbol id="i-bajar" viewBox="0 0 24 24"><path d="M12 4v12M6.5 10.5 12 16l5.5-5.5"/><path d="M4 20h16"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6"/></symbol>
+      <symbol id="i-telefono" viewBox="0 0 24 24"><path d="M7.5 3.5h-3A1.5 1.5 0 0 0 3 5.2C3.6 13.3 10.7 20.4 18.8 21a1.5 1.5 0 0 0 1.7-1.5v-3a1.5 1.5 0 0 0-1.2-1.5l-2.6-.5a1.5 1.5 0 0 0-1.5.6l-1 1.3a13 13 0 0 1-5.1-5.1l1.3-1a1.5 1.5 0 0 0 .6-1.5l-.5-2.6a1.5 1.5 0 0 0-1.5-1.2z"/></symbol>
+    </defs>
+  </svg>
+
+  <a href="#contenido" class="saltar">Saltar al contenido</a>
+
   <header>
-    <h1>postop<span>Friend</span></h1>
-    <nav>
+    <div class="marca">
+      <span class="chip"><svg class="ico" aria-hidden="true"><use href="#i-grafico"/></svg></span>
+      <div class="titulos">
+        <h1>postop<span class="acento">Friend</span></h1>
+        <span class="lema">Observabilidad de las llamadas</span>
+      </div>
+    </div>
+    <nav aria-label="Secciones">
       <a href="/">Llamada</a>
       <a href="/consola">Conocimiento</a>
-      <a href="/panel" class="activo">Panel</a>
+      <a href="/panel" class="activo" aria-current="page">Panel</a>
       <a href="/salud-voz">Salud de voz</a>
     </nav>
+    <div class="tema" role="group" aria-label="Tema visual">
+      <button type="button" data-set-tema="monitor" aria-pressed="true">Monitor</button>
+      <button type="button" data-set-tema="clinico" aria-pressed="false">Clínico</button>
+    </div>
   </header>
 
-  <main style="grid-template-columns:1fr;max-width:1100px">
+  <main id="contenido" style="grid-template-columns:minmax(0,1fr);max-width:1180px">
 
     <!-- El filtro por ruta es lo primero que se ve, y no por casualidad: una cifra
          medida por OpenRouter no describe el sistema que se entrega. Ver
          app/obs/metricas.py. -->
     <div class="tarjeta">
-      <div class="fila" style="justify-content:space-between">
+      <div class="fila aparte">
         <div class="fila">
-          <label class="mono" for="ruta">Ruta del LLM</label>
-          <select id="ruta">
-            <option value="groq">groq (la que se entrega)</option>
-            <option value="">todas</option>
-            <option value="openrouter">openrouter (desarrollo)</option>
-          </select>
+          <div class="campo">
+            <label for="ruta">Ruta del LLM medida</label>
+            <select id="ruta">
+              <option value="groq">groq · la que se entrega</option>
+              <option value="">todas las rutas</option>
+              <option value="openrouter">openrouter · solo desarrollo</option>
+            </select>
+          </div>
           <span id="marcaRuta" class="vacio"></span>
         </div>
         <div class="fila">
-          <label class="mono" for="auto"><input type="checkbox" id="auto" checked> refrescar</label>
-          <button id="refrescar">Actualizar</button>
+          <label for="auto" class="fila" style="gap:6px">
+            <input type="checkbox" id="auto" checked> refrescar cada 5 s
+          </label>
+          <button id="refrescar">
+            <svg class="ico chico" aria-hidden="true"><use href="#i-refrescar"/></svg>Actualizar
+          </button>
         </div>
       </div>
+      <p class="nota" style="margin-top:var(--e4)">
+        Nada de esta pantalla se calcula aquí: todo sale de <code>/api/metricas</code>,
+        la misma función que genera la tabla del README. Dos implementaciones podrían
+        discrepar, y lo que se comprueba es justamente que no lo hagan.
+      </p>
     </div>
 
     <!-- 1. Alertas ------------------------------------------------------- -->
     <div class="tarjeta">
-      <h2>Cola de escalamiento</h2>
+      <h2>
+        <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-campana"/></svg></span>
+        Cola de escalamiento
+      </h2>
+      <p class="subtitulo">
+        Lo que un humano tiene que atender. Una alerta roja nueva suena al entrar.
+      </p>
       <div id="alertas"><p class="vacio">Cargando…</p></div>
     </div>
 
     <!-- 2. Latencia ------------------------------------------------------ -->
     <div class="tarjeta">
-      <h2>Latencia · fin de habla → primer audio</h2>
-      <p class="vacio" style="margin-top:-6px">
+      <h2>
+        <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-reloj"/></svg></span>
+        Latencia · fin de habla → primer audio
+      </h2>
+      <p class="subtitulo">
         Medida con el reloj del navegador en los dos extremos. El servidor no la
-        calcula: descontaría el viaje de red y el arranque del audio.
+        calcula: descontaría el viaje de red y el arranque del audio, es decir, la
+        maquillaría a favor propio. Objetivo declarado: 1,5 s.
       </p>
       <div class="metricas" id="latencia"></div>
-      <div id="histograma" style="margin-top:14px"></div>
-      <h3 style="font-size:13px;color:var(--tenue);text-transform:uppercase;letter-spacing:.5px">
-        Desglose por etapa</h3>
+      <div id="histograma" style="margin-top:var(--e5)"></div>
+      <h3>Desglose por etapa</h3>
       <div id="etapas"></div>
     </div>
 
     <!-- 3. Consumo y costo ----------------------------------------------- -->
     <div class="tarjeta">
-      <h2>Consumo y costo</h2>
+      <h2>
+        <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-moneda"/></svg></span>
+        Consumo y costo
+      </h2>
+      <p class="subtitulo">
+        Dos llamadas al LLM por turno es el presupuesto de diseño; todo lo demás del
+        turno es determinista. La proyección usa la tarifa vigente, no una estimación.
+      </p>
       <div class="metricas" id="consumo"></div>
-      <div id="costo" style="margin-top:14px"></div>
+      <div id="costo" style="margin-top:var(--e5)"></div>
     </div>
 
     <!-- 4. Incidencias --------------------------------------------------- -->
     <div class="tarjeta">
-      <h2>Incidencias registradas</h2>
+      <h2>
+        <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-incidencia"/></svg></span>
+        Incidencias registradas
+      </h2>
+      <p class="subtitulo">
+        Lo que salió mal y se contabilizó en vez de pasar en silencio: fallos de API,
+        transcripciones vacías, guardarraíles que dispararon.
+      </p>
       <div id="incidencias"></div>
     </div>
 
     <!-- 5. Historial ----------------------------------------------------- -->
     <div class="tarjeta">
-      <h2>Historial de llamadas</h2>
+      <h2>
+        <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-historial"/></svg></span>
+        Historial de llamadas
+      </h2>
+      <p class="subtitulo">
+        Cada llamada con su acta de cierre. El acta se genera siempre, incluso si la
+        llamada se cortó a mitad.
+      </p>
       <div id="historial"><p class="vacio">Cargando…</p></div>
     </div>
 
   </main>
 
+  <script src="/static/js/tema.js"></script>
   <script src="/static/js/panel.js"></script>
 </body>
 </html>

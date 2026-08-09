@@ -1,82 +1,270 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-tema="monitor">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>postopFriend · llamada</title>
   <link rel="stylesheet" href="/static/css/app.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📞</text></svg>">
+  <script>
+    /* Antes de pintar. El tema vive en `data-tema` de <html> y si llegara un
+       frame tarde, cada salto entre las cuatro pantallas empezaría con un
+       fogonazo del tema que no es. Ver /static/js/tema.js. */
+    (function () {
+      try {
+        var t = localStorage.getItem("postopfriend-tema");
+        if (t === "monitor" || t === "clinico") document.documentElement.dataset.tema = t;
+      } catch (e) { /* almacenamiento bloqueado: se queda el de por defecto */ }
+    })();
+  </script>
 </head>
 <body>
+  <!-- Juego de iconos. Un solo trazo (1.6) para todos: mezclar librerías se nota
+       aunque no se sepa decir por qué. Va en línea y no en un `.svg` aparte
+       porque un `<use>` externo depende de que el servidor acierte el
+       Content-Type, y en Windows eso se lee del registro — la misma trampa que
+       tumbó el VAD (§8.9 de docs/estado-del-proyecto.md). -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-pulso" viewBox="0 0 24 24"><path d="M2 12h4l2-8 4 16 3-11 2 3h5"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-7.5A8 8 0 0 1 11 4h2a8 8 0 0 1 8 8z"/></symbol>
+      <symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+      <symbol id="i-libro" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 19.5V4.5"/></symbol>
+      <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M12 3 2 21h20z"/><path d="M12 10v4M12 17.5v.5"/></symbol>
+      <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 2 4 5.5v6c0 5 3.4 8.9 8 10.5 4.6-1.6 8-5.5 8-10.5v-6z"/><path d="M9 12l2 2 4-4"/></symbol>
+      <symbol id="i-telefono" viewBox="0 0 24 24"><path d="M7.5 3.5h-3A1.5 1.5 0 0 0 3 5.2C3.6 13.3 10.7 20.4 18.8 21a1.5 1.5 0 0 0 1.7-1.5v-3a1.5 1.5 0 0 0-1.2-1.5l-2.6-.5a1.5 1.5 0 0 0-1.5.6l-1 1.3a13 13 0 0 1-5.1-5.1l1.3-1a1.5 1.5 0 0 0 .6-1.5l-.5-2.6a1.5 1.5 0 0 0-1.5-1.2z"/></symbol>
+      <symbol id="i-colgar" viewBox="0 0 24 24"><path d="M2 16c5-4 15-4 20 0"/><path d="M8.5 16.5v3M15.5 16.5v3"/><path d="M4 20 20 4"/></symbol>
+      <symbol id="i-bajar" viewBox="0 0 24 24"><path d="M12 4v12M6.5 10.5 12 16l5.5-5.5"/><path d="M4 20h16"/></symbol>
+      <symbol id="i-enviar" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></symbol>
+      <symbol id="i-persona" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+      <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/></symbol>
+      <symbol id="i-cruz" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+      <symbol id="i-hospital" viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16"/><path d="M2 21h20M9 21v-4h6v4M9 8h6M12 5v6"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></symbol>
+    </defs>
+  </svg>
+
+  <a href="#contenido" class="saltar">Saltar al contenido</a>
+
   <header>
-    <h1>postop<span>Friend</span></h1>
-    <nav>
-      <a href="/" class="activo">Llamada</a>
+    <div class="marca">
+      <span class="chip"><svg class="ico" aria-hidden="true"><use href="#i-pulso"/></svg></span>
+      <div class="titulos">
+        <h1>postop<span class="acento">Friend</span></h1>
+        <span class="lema">Seguimiento postoperatorio por voz</span>
+      </div>
+    </div>
+    <nav aria-label="Secciones">
+      <a href="/" class="activo" aria-current="page">Llamada</a>
       <a href="/consola">Conocimiento</a>
       <a href="/panel">Panel</a>
       <a href="/salud-voz">Salud de voz</a>
     </nav>
+    <div class="tema" role="group" aria-label="Tema visual">
+      <button type="button" data-set-tema="monitor" aria-pressed="true">Monitor</button>
+      <button type="button" data-set-tema="clinico" aria-pressed="false">Clínico</button>
+    </div>
   </header>
 
-  <div class="aviso">
+  <div class="aviso" role="note">
+    <svg class="ico" aria-hidden="true"><use href="#i-alerta"/></svg>
     Demostración con datos sintéticos. No es asesoría médica ni apta para uso asistencial.
   </div>
 
-  <main>
+  <main id="contenido" class="lateral-arriba">
     <section>
+      <!-- 1. A quién se llama ------------------------------------------------
+           Los selectores llevan etiqueta visible: «día postop» no se adivina de
+           un desplegable que dice «día 7», y de ese número depende qué se
+           pregunta y con qué umbrales se juzga la respuesta. -->
       <div class="tarjeta">
-        <h2>Paciente</h2>
-        <div class="fila" style="margin-bottom:14px">
-          <select id="paciente" style="flex:1;min-width:260px"></select>
-          <select id="dia"></select>
-          <button id="llamar" class="primario">Iniciar llamada</button>
-          <button id="colgar" class="peligro" disabled>Colgar</button>
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-persona"/></svg></span>
+          A quién se llama
+        </h2>
+        <div class="fila" style="align-items:flex-end">
+          <div class="campo crece" style="min-width:250px">
+            <label for="paciente">Paciente</label>
+            <select id="paciente"></select>
+          </div>
+          <div class="campo">
+            <label for="dia">Día tras la cirugía</label>
+            <select id="dia"></select>
+          </div>
+          <button id="llamar" class="primario">
+            <svg class="ico chico" aria-hidden="true"><use href="#i-pulso"/></svg>Iniciar llamada
+          </button>
+          <button id="colgar" class="peligro" disabled>
+            <svg class="ico chico" aria-hidden="true"><use href="#i-colgar"/></svg>Colgar
+          </button>
         </div>
         <dl class="ficha" id="ficha"></dl>
       </div>
 
+      <!-- 2. La conversación -------------------------------------------------- -->
       <div class="tarjeta">
-        <h2>Conversación</h2>
-        <div class="fila" style="margin-bottom:12px">
-          <div class="estado"><span class="punto" id="punto"></span><span id="estado">Sin llamada</span></div>
-          <span class="mono" id="modo" style="margin-left:auto;color:var(--tenue)"></span>
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-chat"/></svg></span>
+          Conversación
+          <span class="derecha mono tenue" id="modo"></span>
+        </h2>
+
+        <!-- El letrero de turno. Es lo primero que se mira durante la llamada:
+             dice de quién es la palabra y qué se espera de quien mira. -->
+        <div class="estado-llamada" id="estado-caja" role="status" aria-live="polite">
+          <span class="orbe" aria-hidden="true">
+            <span class="anillo"></span><span class="punto" id="punto"></span>
+          </span>
+          <div class="letrero">
+            <div class="titulo" id="estado">Sin llamada</div>
+            <div class="pista" id="pista-estado">Elija un paciente y pulse «Iniciar llamada».</div>
+          </div>
+          <div class="reloj" id="reloj" hidden>
+            <svg class="ico chico" aria-hidden="true"><use href="#i-reloj"/></svg>
+            <span id="reloj-valor">00:00</span>
+          </div>
         </div>
-        <div id="transcripcion">
-          <p class="vacio">Elija un paciente y pulse «Iniciar llamada». El agente habla primero: es él quien llama.</p>
+
+        <!-- Medidor de entrada del micrófono. La marca vertical es el umbral del
+             VAD: por debajo de ella el enunciado no llega a salir del navegador. -->
+        <div class="fila" id="caja-medidor" style="margin-top:var(--e4)" hidden>
+          <div class="medidor" id="medidor">
+            <span class="caja-ico" aria-hidden="true"><svg class="ico"><use href="#i-mic"/></svg></span>
+            <div class="pista">
+              <div class="relleno" id="mic-nivel"></div>
+              <div class="umbral" id="mic-umbral" title="Umbral del detector de voz"></div>
+            </div>
+          </div>
+          <span class="mono tenue" id="mic-leyenda">entrada del micrófono</span>
         </div>
-        <div class="fila" style="margin-top:12px">
-          <input id="entrada-texto" placeholder="…o escriba aquí si no tiene micrófono"
-                 style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid var(--borde);background:var(--panel-alto);color:var(--texto);font:inherit"
-                 disabled>
-          <button id="enviar-texto" disabled>Enviar</button>
+
+        <!-- Solo si el VAD no arrancó. Ver call.js: sin este botón el modo de
+             respaldo no tenía forma de mandar audio. El rótulo va en su propio
+             `<span>` porque `empezarAPulsar`/`soltarPulsar` lo reescriben en
+             cada pulsación y un `textContent` sobre el botón entero se llevaría
+             el icono por delante. -->
+        <button id="pulsar-hablar" style="margin-top:var(--e4)" hidden>
+          <svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg>
+          <span id="pulsar-rotulo">Mantenga pulsado para hablar</span>
+        </button>
+
+        <div id="transcripcion" style="margin-top:var(--e4)" role="log" aria-label="Transcripción de la llamada">
+          <div class="vacio-guia">
+            <span class="caja-ico" aria-hidden="true"><svg class="ico"><use href="#i-telefono"/></svg></span>
+            <strong>El agente llama, no al revés</strong>
+            Elija un paciente y pulse «Iniciar llamada». Sofía habla primero y
+            conduce el protocolo; usted responde como si fuera el paciente.
+          </div>
+        </div>
+
+        <div class="fila" style="margin-top:var(--e4)">
+          <input type="text" id="entrada-texto" class="crece"
+                 placeholder="…o escriba aquí si no tiene micrófono" disabled
+                 aria-label="Responder por escrito">
+          <button id="enviar-texto" disabled>
+            <svg class="ico chico" aria-hidden="true"><use href="#i-enviar"/></svg>Enviar
+          </button>
         </div>
       </div>
     </section>
 
     <aside>
+      <!-- 3. La decisión ------------------------------------------------------ -->
       <div class="tarjeta">
-        <h2>Triage en vivo</h2>
-        <div style="margin-bottom:12px">
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-escudo"/></svg></span>
+          Triage en vivo
+        </h2>
+        <p class="subtitulo">
+          El LLM extrae las variables; el nivel lo calcula un motor determinista
+          con los pesos de <code class="mono">rules.yaml</code>.
+        </p>
+
+        <div class="triage-cabecera">
           <span class="nivel indeterminado" id="nivel">indeterminado</span>
-          <span class="mono" id="score" style="float:right;color:var(--tenue)"></span>
+          <span class="score" id="score"></span>
         </div>
+
+        <!-- El score dentro de su escala, con los cortes dibujados. -->
+        <div class="escala-marco">
+          <div class="escala"></div>
+          <div class="escala-aguja" id="aguja" style="left:0%" hidden></div>
+        </div>
+        <div class="escala-pies" style="margin-bottom:var(--e4)">
+          <span>0–1 verde</span><span>2–5 amarillo</span><span>≥6 rojo</span>
+        </div>
+
+        <div class="progreso-protocolo">
+          <span class="puntos" id="progreso-puntos" aria-hidden="true"></span>
+          <span id="progreso-texto">0 de 6 variables recogidas</span>
+        </div>
+
         <div id="variables"></div>
+
+        <details class="detalle">
+          <summary>Qué significa cada nivel</summary>
+          <div class="leyenda">
+            <div class="verde"><b>Verde</b> evolución esperada: se cierra la llamada con recomendaciones.</div>
+            <div class="amarillo"><b>Amarillo</b> vigilar: se pide consulta en un plazo y se deja alerta.</div>
+            <div class="rojo"><b>Rojo</b> escalamiento inmediato a un humano.</div>
+            <div><b>Indeterminado</b> faltan datos: no es un nivel clínico, es la
+              confesión de que la llamada no puede cerrarse todavía.</div>
+          </div>
+          <p class="nota" style="margin-top:var(--e2)">
+            El falso negativo pesa más que el falso positivo: ante la duda, se escala.
+          </p>
+        </details>
       </div>
 
+      <!-- 4. La medición ------------------------------------------------------ -->
       <div class="tarjeta">
-        <h2>Latencia del último turno</h2>
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-reloj"/></svg></span>
+          Latencia del último turno
+        </h2>
+        <p class="subtitulo">
+          Desde que el paciente calla hasta que suena la primera sílaba, medido con
+          el reloj del navegador en los dos extremos. Objetivo: 1,5 s.
+        </p>
         <div class="metricas" id="metricas">
-          <div class="metrica"><div class="num" id="m-latencia">—</div><div class="eti">fin habla → audio</div></div>
-          <div class="metrica"><div class="num" id="m-p50">—</div><div class="eti">P50 sesión</div></div>
-          <div class="metrica"><div class="num" id="m-tokens">—</div><div class="eti">tokens</div></div>
+          <div class="metrica">
+            <div class="num" id="m-latencia">—</div>
+            <div class="eti">último turno</div>
+          </div>
+          <div class="metrica">
+            <div class="num" id="m-p50">—</div>
+            <div class="eti">P50 de la sesión</div>
+          </div>
+          <div class="metrica">
+            <div class="num" id="m-tokens">—</div>
+            <div class="eti">tokens in / out</div>
+          </div>
         </div>
-        <div class="mono" id="etapas" style="margin-top:10px;color:var(--tenue)"></div>
+        <details class="detalle">
+          <summary>Desglose por etapa</summary>
+          <div class="mono tenue" id="etapas">Sin turnos medidos todavía.</div>
+        </details>
       </div>
 
+      <!-- 5. La evidencia ----------------------------------------------------- -->
       <div class="tarjeta">
-        <h2>Fuentes citadas</h2>
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-libro"/></svg></span>
+          Fuentes citadas
+        </h2>
+        <p class="subtitulo">
+          Solo aparecen las que el modelo citó de verdad en lo que dijo. Cada una
+          abre el documento en su página.
+        </p>
         <div id="citas"><p class="vacio">Sin consultas al conocimiento todavía.</p></div>
       </div>
+
+      <!-- Panel de diagnóstico del endpointing. Oculto salvo con `?diag=1`: mide
+           por qué un enunciado no llegó a salir del navegador, y no tiene nada
+           que hacer en la demo del jurado. Ver app/static/js/diagnostico.js. -->
+      <div class="tarjeta" id="diag" hidden></div>
 
       <!-- Pantalla de cierre. Se rellena con el acta que manda el servidor al
            colgar; las diez secciones completas están en la descarga. -->
@@ -87,7 +275,11 @@
   <!-- No se carga ort.wasm.min.js: vad.bundle.min.js trae su propio onnxruntime
        y con los dos en juego el VAD no arranca. Ver app/voice/vendor.py. -->
   <script src="/static/vendor/vad.bundle.min.js"></script>
+  <script src="/static/js/tema.js"></script>
   <script src="/static/js/player.js"></script>
+  <!-- Antes de audio.js: este define `percentilDiag` y `nivelDeAudio`, que la
+       captura usa al cerrar cada enunciado. Inerte sin `?diag=1`. -->
+  <script src="/static/js/diagnostico.js"></script>
   <script src="/static/js/audio.js"></script>
   <script src="/static/js/call.js"></script>
 </body>

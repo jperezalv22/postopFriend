@@ -1,75 +1,153 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-tema="monitor">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>postopFriend · conocimiento</title>
   <link rel="stylesheet" href="/static/css/app.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📚</text></svg>">
+  <script>
+    /* Antes de pintar. Ver el comentario en call.html y /static/js/tema.js. */
+    (function () {
+      try {
+        var t = localStorage.getItem("postopfriend-tema");
+        if (t === "monitor" || t === "clinico") document.documentElement.dataset.tema = t;
+      } catch (e) { /* almacenamiento bloqueado: se queda el de por defecto */ }
+    })();
+  </script>
   <style>
+    /* La zona de carga es el gesto central de la compuerta G5, así que se le
+       permite ser la única superficie punteada de todo el proyecto. */
     #zona-carga {
-      border: 2px dashed var(--borde); border-radius: var(--radio);
-      padding: 26px; text-align: center; color: var(--tenue);
-      cursor: pointer; transition: border-color .15s, background .15s;
+      border: 1.5px dashed var(--borde-fuerte); border-radius: var(--radio);
+      padding: var(--e6) var(--e4); text-align: center; color: var(--tenue);
+      background: var(--panel-alto);
+      cursor: pointer; transition: border-color var(--transicion), background var(--transicion), color var(--transicion);
     }
-    #zona-carga.encima { border-color: var(--acento); background: var(--panel-alto); color: var(--texto); }
-    .barra { height: 5px; background: var(--panel-alto); border-radius: 3px; overflow: hidden; margin-top: 7px; }
-    .barra > div { height: 100%; background: var(--acento); transition: width .25s; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .6px;
-         color: var(--tenue); padding: 7px 8px; border-bottom: 1px solid var(--borde); font-weight: 600; }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--borde); vertical-align: top; }
-    tr.subido td:first-child { border-left: 3px solid var(--acento); padding-left: 9px; }
-    .pastilla { display: inline-block; padding: 1px 8px; border-radius: 20px; font-size: 11px;
-                background: var(--panel-alto); color: var(--tenue); }
-    .pastilla.disponible { background: #12261a; color: var(--verde); }
-    .pastilla.sin_texto, .pastilla.error { background: #2d1417; color: var(--rojo); }
-    input[type=text], input[type=search] {
-      padding: 9px 12px; border-radius: 8px; border: 1px solid var(--borde);
-      background: var(--panel-alto); color: var(--texto); font: inherit;
+    #zona-carga:hover { border-color: var(--muy-tenue); background: var(--panel-mas-alto); }
+    #zona-carga.encima { border-color: var(--acento); background: var(--acento-tinte); color: var(--texto); }
+    #zona-carga .caja-ico {
+      width: 46px; height: 46px; margin: 0 auto var(--e3); border-radius: 14px;
+      display: grid; place-items: center;
+      background: var(--acento-tinte); color: var(--acento-2);
     }
-    pre { background: var(--panel-alto); padding: 11px; border-radius: 8px; overflow-x: auto;
-          font-size: 12px; margin: 8px 0 0; max-height: 300px; }
+    #zona-carga .caja-ico .ico { width: 22px; height: 22px; }
+    #zona-carga strong { color: var(--texto); font-weight: 650; }
+    #zona-carga .formatos { display: block; margin-top: 5px; font-size: 12.5px; color: var(--muy-tenue); }
+
+    pre {
+      background: var(--fondo); padding: var(--e3); border-radius: var(--radio-chico);
+      overflow-x: auto; font-size: 11.5px; margin: var(--e2) 0 0; max-height: 280px;
+      border: 1px solid var(--borde-suave); font-family: var(--mono); color: var(--tenue);
+    }
   </style>
 </head>
 <body>
+  <!-- Ver la nota del sprite en call.html: en línea y no en un `.svg` aparte. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-libro" viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 19.5V4.5"/></symbol>
+      <symbol id="i-ciclo" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4h-4"/></symbol>
+      <symbol id="i-subir" viewBox="0 0 24 24"><path d="M12 17V4M6.5 9.5 12 4l5.5 5.5"/><path d="M4 20h16"/></symbol>
+      <symbol id="i-lista" viewBox="0 0 24 24"><path d="M8.5 6H21M8.5 12H21M8.5 18H21"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+      <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+      <symbol id="i-buscar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></symbol>
+      <symbol id="i-basura" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></symbol>
+    </defs>
+  </svg>
+
+  <a href="#contenido" class="saltar">Saltar al contenido</a>
+
   <header>
-    <h1>postop<span>Friend</span></h1>
-    <nav>
+    <div class="marca">
+      <span class="chip"><svg class="ico" aria-hidden="true"><use href="#i-libro"/></svg></span>
+      <div class="titulos">
+        <h1>postop<span class="acento">Friend</span></h1>
+        <span class="lema">Conocimiento vivo del agente</span>
+      </div>
+    </div>
+    <nav aria-label="Secciones">
       <a href="/">Llamada</a>
-      <a href="/consola" class="activo">Conocimiento</a>
+      <a href="/consola" class="activo" aria-current="page">Conocimiento</a>
       <a href="/panel">Panel</a>
       <a href="/salud-voz">Salud de voz</a>
     </nav>
+    <div class="tema" role="group" aria-label="Tema visual">
+      <button type="button" data-set-tema="monitor" aria-pressed="true">Monitor</button>
+      <button type="button" data-set-tema="clinico" aria-pressed="false">Clínico</button>
+    </div>
   </header>
 
-  <main style="grid-template-columns:1fr 400px">
+  <main id="contenido" style="grid-template-columns:minmax(0,1fr) 420px">
     <section>
+      <!-- El ciclo completo, dicho antes de que nadie tenga que deducirlo.
+           Esta pantalla es donde se demuestra la compuerta G5, y la demostración
+           no es «hay una tabla de documentos»: es subir uno, verlo usar, borrarlo
+           y comprobar que no queda rastro. Los tres pasos se marcan solos según
+           lo que va ocurriendo, así que sirven de guion y de acuse de recibo. -->
       <div class="tarjeta">
-        <h2>Subir documentos</h2>
-        <div id="zona-carga">
-          <strong>Arrastre archivos aquí</strong> o haga clic para elegir<br>
-          <span style="font-size:13px">PDF, DOCX, TXT o MD · hasta 60 MB</span>
-          <input type="file" id="archivos" multiple accept=".pdf,.docx,.txt,.md" hidden>
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-ciclo"/></svg></span>
+          Conocimiento vivo · el ciclo en tres pasos
+        </h2>
+        <div class="pasos" id="pasos">
+          <div class="paso" id="paso-1">
+            <span class="n">1</span>
+            <div><div class="que">Subir un documento</div>
+              <div class="como">Queda indexado y disponible para la siguiente llamada.</div></div>
+          </div>
+          <div class="paso" id="paso-2">
+            <span class="n">2</span>
+            <div><div class="que">Comprobar que lo usa</div>
+              <div class="como">Búsquelo con «Probar el conocimiento», sin pasar por el LLM.</div></div>
+          </div>
+          <div class="paso" id="paso-3">
+            <span class="n">3</span>
+            <div><div class="que">Borrarlo y verificar el olvido</div>
+              <div class="como">Cero fragmentos en Chroma, cero registros y cero aciertos.</div></div>
+          </div>
         </div>
-        <div id="ingestas" style="margin-top:12px"></div>
       </div>
 
       <div class="tarjeta">
-        <h2>Documentos indexados</h2>
-        <div class="fila" style="margin-bottom:12px">
-          <input type="search" id="buscar" placeholder="Buscar por título…" style="flex:1">
-          <select id="filtro-origen">
-            <option value="">Todos</option>
-            <option value="subido">Solo subidos</option>
-            <option value="base">Solo corpus base</option>
-          </select>
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-subir"/></svg></span>
+          Subir documentos
+        </h2>
+        <div id="zona-carga" role="button" tabindex="0"
+             aria-label="Subir documentos: arrastre archivos o pulse para elegir">
+          <span class="caja-ico" aria-hidden="true"><svg class="ico"><use href="#i-subir"/></svg></span>
+          <strong>Arrastre archivos aquí</strong> o pulse para elegir
+          <span class="formatos">PDF, DOCX, TXT o MD · hasta 60 MB</span>
+          <input type="file" id="archivos" multiple accept=".pdf,.docx,.txt,.md" hidden>
         </div>
-        <div style="max-height:56vh;overflow-y:auto">
-          <table>
+        <div id="ingestas" style="margin-top:var(--e3)"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-lista"/></svg></span>
+          Documentos indexados
+          <span class="derecha mono tenue" id="cuenta-tabla"></span>
+        </h2>
+        <div class="fila" style="margin-bottom:var(--e4)">
+          <input type="search" id="buscar" class="crece" placeholder="Buscar por título…"
+                 aria-label="Buscar documentos por título">
+          <div class="campo">
+            <label for="filtro-origen" class="solo-lectores">Filtrar por origen</label>
+            <select id="filtro-origen">
+              <option value="">Todos los orígenes</option>
+              <option value="subido">Solo subidos aquí</option>
+              <option value="base">Solo corpus base</option>
+            </select>
+          </div>
+        </div>
+        <div style="max-height:54vh;overflow-y:auto">
+          <table class="tabla">
             <thead><tr>
               <th>Documento</th><th>Procedimiento</th><th>Idioma</th>
-              <th>Págs</th><th>Frags</th><th>Estado</th><th></th>
+              <th style="text-align:right">Págs</th><th style="text-align:right">Frags</th>
+              <th>Estado</th><th><span class="solo-lectores">Acciones</span></th>
             </tr></thead>
             <tbody id="tabla"><tr><td colspan="7" class="vacio">Cargando…</td></tr></tbody>
           </table>
@@ -79,49 +157,76 @@
 
     <aside>
       <div class="tarjeta">
-        <h2>Estado del conocimiento</h2>
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-cpu"/></svg></span>
+          Estado del conocimiento
+        </h2>
         <div class="metricas">
           <div class="metrica"><div class="num" id="e-docs">—</div><div class="eti">documentos</div></div>
           <div class="metrica"><div class="num" id="e-frags">—</div><div class="eti">fragmentos</div></div>
           <div class="metrica"><div class="num" id="e-version">—</div><div class="eti">kb_version</div></div>
         </div>
-        <div class="mono" id="e-modelo" style="margin-top:10px;color:var(--tenue)"></div>
+        <p class="nota" style="margin-top:var(--e3)">
+          <code>kb_version</code> sube en cada alta y en cada baja. Es lo que obliga
+          a reconstruir el índice léxico y la garantía de que no sobrevive una copia
+          de lo borrado.
+        </p>
+        <div class="mono tenue" id="e-modelo" style="margin-top:var(--e2)"></div>
       </div>
 
       <div class="tarjeta">
-        <h2>Probar el conocimiento</h2>
-        <p style="margin-top:0;font-size:13px;color:var(--tenue)">
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-buscar"/></svg></span>
+          Probar el conocimiento
+        </h2>
+        <p class="subtitulo">
           Recupera fragmentos <strong>sin pasar por el LLM</strong>. Separa dos preguntas
           que se confunden cuando una respuesta sale mal: ¿no se encontró la fuente, o
           se encontró y el modelo la ignoró?
         </p>
         <div class="fila">
-          <input type="text" id="consulta" style="flex:1"
-                 placeholder="¿cuándo me puedo bañar?">
-          <button id="btn-probar" class="primario">Buscar</button>
+          <input type="text" id="consulta" class="crece"
+                 placeholder="¿cuándo me puedo bañar?" aria-label="Consulta de prueba">
+          <button id="btn-probar" class="primario">
+            <svg class="ico chico" aria-hidden="true"><use href="#i-buscar"/></svg>Buscar
+          </button>
         </div>
-        <div id="resultado-prueba"></div>
+        <div id="resultado-prueba" style="margin-top:var(--e4)"></div>
       </div>
 
       <div class="tarjeta">
-        <h2>Verificar olvido</h2>
-        <p style="margin-top:0;font-size:13px;color:var(--tenue)">
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-basura"/></svg></span>
+          Verificar olvido
+        </h2>
+        <p class="subtitulo">
           Tras eliminar un documento, comprueba que ya no se recupera: fragmentos en
           Chroma, registros en la base y aciertos en una búsqueda real.
         </p>
         <div class="fila">
-          <input type="text" id="doc-olvido" style="flex:1" placeholder="doc_id eliminado">
+          <input type="text" id="doc-olvido" class="crece" placeholder="doc_id eliminado"
+                 aria-label="doc_id del documento eliminado">
           <button id="btn-olvido">Verificar</button>
         </div>
-        <div id="resultado-olvido"></div>
+        <div id="resultado-olvido" style="margin-top:var(--e4)"></div>
       </div>
     </aside>
   </main>
 
+  <script src="/static/js/tema.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? "").replace(/[<>&"]/g, (c) =>
       ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+
+    // Los tres pasos del ciclo de G5 se marcan solos conforme ocurren. Es un
+    // acuse de recibo, no una decoración: dice qué falta por demostrar.
+    const pasos = { 1: false, 2: false, 3: false };
+    function marcarPaso(n) {
+      pasos[n] = true;
+      $(`paso-${n}`).classList.add("hecho");
+      $(`paso-${n}`).querySelector(".n").textContent = "✓";
+    }
 
     // ─── Estado y listado ───────────────────────────────────────────────────
     async function refrescar() {
@@ -138,34 +243,47 @@
     }
 
     function pintarTabla(docs) {
+      $("cuenta-tabla").textContent = docs.length
+        ? `${docs.length} en la lista` : "";
       if (!docs.length) {
-        $("tabla").innerHTML = '<tr><td colspan="7" class="vacio">Sin resultados.</td></tr>';
+        $("tabla").innerHTML = `<tr><td colspan="7">
+          <div class="vacio-guia">
+            <span class="caja-ico" aria-hidden="true"><svg class="ico"><use href="#i-buscar"/></svg></span>
+            <strong>Ningún documento coincide</strong>
+            Pruebe con otro título o quite el filtro de origen.</div></td></tr>`;
         return;
       }
       $("tabla").innerHTML = docs.map((d) => `
         <tr class="${d.origen === "subido" ? "subido" : ""}">
           <td>
             <div style="font-weight:500">${esc(d.titulo)}</div>
-            <div class="mono" style="color:var(--tenue)">${esc(d.doc_id)} · ${esc(d.sha256)}
-              ${d.origen === "subido" ? " · subido" : ""}</div>
+            <div class="mono" style="color:var(--muy-tenue)">${esc(d.doc_id)} · ${esc(d.sha256)}
+              ${d.origen === "subido" ? " · subido aquí" : ""}</div>
             ${d.detalle ? `<div class="evidencia" style="color:var(--amarillo)">${esc(d.detalle)}</div>` : ""}
           </td>
           <td>${esc(d.procedimiento)}</td>
           <td>${esc(d.idioma)}</td>
-          <td>${d.paginas ?? "—"}</td>
-          <td>${d.chunks ?? "—"}</td>
+          <td style="text-align:right" class="mono">${d.paginas ?? "—"}</td>
+          <td style="text-align:right" class="mono">${d.chunks ?? "—"}</td>
           <td><span class="pastilla ${esc(d.estado)}">${esc(d.estado)}</span></td>
-          <td style="white-space:nowrap">
-            <a href="/api/kb/source/${encodeURIComponent(d.doc_id)}" target="_blank" rel="noopener">ver</a>
-            &nbsp;<a href="#" onclick="eliminar('${d.doc_id}','${esc(d.titulo).replace(/'/g, "")}');return false"
-               style="color:var(--rojo)">eliminar</a>
+          <td style="white-space:nowrap;text-align:right">
+            <a class="boton chico" href="/api/kb/source/${encodeURIComponent(d.doc_id)}"
+               target="_blank" rel="noopener" title="Abrir el documento original">Ver</a>
+            <button class="chico peligro-sutil" data-eliminar="${esc(d.doc_id)}"
+                    data-titulo="${esc(d.titulo)}" title="Eliminar del conocimiento">Eliminar</button>
           </td>
         </tr>`).join("");
+
+      $("tabla").querySelectorAll("[data-eliminar]").forEach((b) =>
+        b.addEventListener("click", () => eliminar(b.dataset.eliminar, b.dataset.titulo)));
     }
 
     // ─── Alta ───────────────────────────────────────────────────────────────
     const zona = $("zona-carga");
     zona.addEventListener("click", () => $("archivos").click());
+    zona.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("archivos").click(); }
+    });
     zona.addEventListener("dragover", (e) => { e.preventDefault(); zona.classList.add("encima"); });
     zona.addEventListener("dragleave", () => zona.classList.remove("encima"));
     zona.addEventListener("drop", (e) => {
@@ -189,8 +307,9 @@
           if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
           seguir((await r.json()).tarea_id, caja);
         } catch (e) {
+          caja.classList.add("mala");
           caja.querySelector(".meta").innerHTML =
-            `<span style="color:var(--rojo)">${esc(e.message)}</span>`;
+            `<span class="color-rojo">${esc(e.message)}</span>`;
         }
       }
     }
@@ -206,14 +325,20 @@
         if (!p.terminado) continue;
 
         const res = p.resultado || {};
+        caja.querySelector(".barra").remove();
         if (res.estado === "disponible") {
-          meta.innerHTML = `<span style="color:var(--verde)">disponible</span> ·
+          caja.classList.add("buena");
+          meta.innerHTML = `<span class="color-verde">disponible</span> ·
             ${res.fragmentos} fragmentos · ${res.paginas} páginas · ${res.segundos}s ·
             kb_version ${res.kb_version}`;
+          // Ya se puede buscar: el paso 2 deja de ser una instrucción abstracta.
+          marcarPaso(1);
         } else if (res.estado === "duplicado") {
-          meta.innerHTML = `<span style="color:var(--amarillo)">duplicado</span> · ${esc(res.detalle)}`;
+          caja.classList.add("dudosa");
+          meta.innerHTML = `<span class="color-amarillo">duplicado</span> · ${esc(res.detalle)}`;
         } else {
-          meta.innerHTML = `<span style="color:var(--rojo)">${esc(res.estado)}</span> · ${esc(res.detalle)}`;
+          caja.classList.add("mala");
+          meta.innerHTML = `<span class="color-rojo">${esc(res.estado)}</span> · ${esc(res.detalle)}`;
         }
         refrescar();
         break;
@@ -221,16 +346,29 @@
     }
 
     // ─── Baja ───────────────────────────────────────────────────────────────
-    window.eliminar = async (docId, titulo) => {
+    // El doc_id se deja puesto en «Verificar olvido» y el resultado se cuenta en
+    // la propia página. Un `alert()` obliga a leer y descartar antes de poder
+    // seguir, y en una demostración grabada tapa justo lo que hay que enseñar.
+    async function eliminar(docId, titulo) {
       if (!confirm(`¿Eliminar «${titulo}» del conocimiento del agente?`)) return;
       const r = await fetch(`/api/kb/documentos/${encodeURIComponent(docId)}`, { method: "DELETE" });
       const d = await r.json();
-      if (!r.ok) return alert(d.detail || "no se pudo eliminar");
+      if (!r.ok) {
+        $("resultado-olvido").innerHTML =
+          `<div class="cita mala"><strong class="color-rojo">No se pudo eliminar</strong>
+           <div class="meta">${esc(d.detail || "sin detalle")}</div></div>`;
+        return;
+      }
       $("doc-olvido").value = docId;
-      alert(`Eliminado: ${d.fragmentos_eliminados} fragmentos. kb_version ahora ${d.kb_version}.\n\n` +
-            `El doc_id quedó en «Verificar olvido» para que lo compruebe.`);
+      $("resultado-olvido").innerHTML = `
+        <div class="cita dudosa">
+          <strong>Eliminado · falta comprobarlo</strong>
+          <div class="meta">${d.fragmentos_eliminados} fragmentos borrados ·
+            kb_version ahora ${d.kb_version}</div>
+          <div class="meta">El doc_id ya está puesto arriba: pulse «Verificar».</div>
+        </div>`;
       refrescar();
-    };
+    }
 
     // ─── Probar ─────────────────────────────────────────────────────────────
     $("btn-probar").addEventListener("click", probar);
@@ -246,21 +384,23 @@
       }).then((r) => r.json());
 
       const aviso = d.abstendria
-        ? `<div class="cita" style="border-left:3px solid var(--amarillo)">
-             <strong>El agente se abstendría</strong>
+        ? `<div class="cita dudosa">
+             <div class="titulo">El agente se abstendría</div>
              <div class="meta">${esc(d.motivo_abstencion)}</div>
-             <div class="meta">Declararía que no lo tiene en sus guías.</div></div>`
-        : `<div class="cita" style="border-left:3px solid var(--verde)">
-             <strong>El agente respondería</strong>
-             <div class="meta">relevancia ${d.relevancia}</div></div>`;
+             <div class="meta">Diría que no lo tiene en sus guías en vez de improvisar.</div></div>`
+        : `<div class="cita buena">
+             <div class="titulo">El agente respondería</div>
+             <div class="meta">relevancia ${esc(d.relevancia)} · ${d.citas.length} fragmentos recuperados</div></div>`;
 
       $("resultado-prueba").innerHTML = aviso + d.citas.map((c, i) => `
         <div class="cita">
           <div class="titulo">[F${i + 1}] ${esc(c.titulo)}</div>
-          <div class="meta">p. ${c.pagina} · score ${c.score} · denso ${c.score_denso} ·
-            BM25 ${c.score_lexico} · <a href="${c.url}" target="_blank" rel="noopener">ver fuente</a></div>
+          <div class="meta">p. ${esc(c.pagina)} · score ${esc(c.score)} · denso ${esc(c.score_denso)} ·
+            BM25 ${esc(c.score_lexico)} · <a href="${esc(c.url)}" target="_blank" rel="noopener">ver fuente</a></div>
           <blockquote>${esc(c.fragmento)}</blockquote>
         </div>`).join("");
+
+      if (pasos[1]) marcarPaso(2);
     }
 
     // ─── Verificar olvido ───────────────────────────────────────────────────
@@ -274,9 +414,9 @@
 
       const ok = d.olvidado;
       $("resultado-olvido").innerHTML = `
-        <div class="cita" style="border-left:3px solid var(--${ok ? "verde" : "rojo"})">
-          <strong style="color:var(--${ok ? "verde" : "rojo"})">
-            ${ok ? "Olvidado por completo" : "TODAVÍA HAY RASTRO"}</strong>
+        <div class="cita ${ok ? "buena" : "mala"}">
+          <div class="titulo ${ok ? "color-verde" : "color-rojo"}">
+            ${ok ? "Olvidado por completo" : "TODAVÍA HAY RASTRO"}</div>
           <div class="meta">
             ${d.fragmentos_en_chroma} fragmentos en Chroma ·
             ${d.registros_en_sqlite} registros en la base ·
@@ -284,7 +424,9 @@
             kb_version ${d.kb_version}
           </div>
         </div>
-        <pre>${esc(JSON.stringify(d.busqueda ?? d, null, 2))}</pre>`;
+        <details class="detalle"><summary>Respuesta completa de la verificación</summary>
+          <pre>${esc(JSON.stringify(d.busqueda ?? d, null, 2))}</pre></details>`;
+      if (ok) marcarPaso(3);
     });
 
     $("buscar").addEventListener("input", refrescar);

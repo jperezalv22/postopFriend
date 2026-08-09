@@ -1,32 +1,97 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-tema="monitor">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>postopFriend · salud de voz</title>
   <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🩺</text></svg>">
+  <script>
+    /* Antes de pintar. Ver el comentario en call.html y /static/js/tema.js. */
+    (function () {
+      try {
+        var t = localStorage.getItem("postopfriend-tema");
+        if (t === "monitor" || t === "clinico") document.documentElement.dataset.tema = t;
+      } catch (e) { /* almacenamiento bloqueado: se queda el de por defecto */ }
+    })();
+  </script>
 </head>
 <body>
+  <!-- Ver la nota del sprite en call.html: en línea y no en un `.svg` aparte. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-estetoscopio" viewBox="0 0 24 24"><path d="M5 3v5.5a4.5 4.5 0 0 0 9 0V3"/><path d="M3.5 3H5M12.5 3H14"/><path d="M9.5 13v2.5a5 5 0 0 0 10 0v-1.2"/><circle cx="19.5" cy="11.5" r="2.2"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></symbol>
+      <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M12 3 2 21h20z"/><path d="M12 10v4M12 17.5v.5"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M6.5 4.5 19 12 6.5 19.5z"/></symbol>
+    </defs>
+  </svg>
+
+  <a href="#contenido" class="saltar">Saltar al contenido</a>
+
   <header>
-    <h1>postop<span>Friend</span></h1>
-    <nav>
+    <div class="marca">
+      <span class="chip"><svg class="ico" aria-hidden="true"><use href="#i-estetoscopio"/></svg></span>
+      <div class="titulos">
+        <h1>postop<span class="acento">Friend</span></h1>
+        <span class="lema">Diagnóstico de la cadena de voz</span>
+      </div>
+    </div>
+    <nav aria-label="Secciones">
       <a href="/">Llamada</a>
       <a href="/consola">Conocimiento</a>
       <a href="/panel">Panel</a>
-      <a href="/salud-voz" class="activo">Salud de voz</a>
+      <a href="/salud-voz" class="activo" aria-current="page">Salud de voz</a>
     </nav>
+    <div class="tema" role="group" aria-label="Tema visual">
+      <button type="button" data-set-tema="monitor" aria-pressed="true">Monitor</button>
+      <button type="button" data-set-tema="clinico" aria-pressed="false">Clínico</button>
+    </div>
   </header>
 
-  <main style="grid-template-columns:1fr;max-width:760px">
+  <main id="contenido" style="grid-template-columns:minmax(0,1fr);max-width:820px">
     <section>
       <div class="tarjeta">
-        <h2>Prueba de la cadena de voz</h2>
-        <p style="margin-top:0;color:var(--tenue);font-size:14px">
-          Comprueba en diez segundos las cuatro piezas de las que depende la llamada.
-          Si algo falla aquí, el problema no está en el agente.
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-mic"/></svg></span>
+          Prueba de la cadena de voz
+        </h2>
+        <p class="subtitulo">
+          Comprueba en diez segundos las siete piezas de las que depende la llamada.
+          Si algo falla aquí, el problema no está en el agente: está debajo. Es el
+          primer sitio al que ir cuando la llamada no habla o no oye.
         </p>
-        <button id="probar" class="primario">Probar micrófono, VAD, transcripción y voz</button>
-        <div id="resultados" style="margin-top:16px"></div>
+        <!-- El rótulo lo reescribe el script («Probando…», «Volver a probar»), así
+             que el icono va en un `<span>` aparte que no se toca. -->
+        <button id="probar" class="primario">
+          <svg class="ico chico" aria-hidden="true"><use href="#i-play"/></svg>
+          <span id="probar-rotulo">Probar micrófono, VAD, transcripción y voz</span>
+        </button>
+
+        <!-- Veredicto de una línea. La lista de siete filas contesta «qué falla»;
+             esto contesta antes «¿puedo hacer la demo o no?», que es lo que se
+             pregunta de verdad quien abre esta página. -->
+        <div id="veredicto" style="margin-top:var(--e4)" hidden></div>
+        <div class="barra" id="avance" style="margin-top:var(--e3)" hidden><div style="width:0%"></div></div>
+
+        <div id="resultados" style="margin-top:var(--e4)"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>
+          <span class="pastilla-icono"><svg class="ico chico" aria-hidden="true"><use href="#i-alerta"/></svg></span>
+          Si algo sale en rojo
+        </h2>
+        <div class="leyenda">
+          <div><b>Micrófono</b> Chrome pide permiso una vez por origen: revise el
+            candado de la barra de direcciones.</div>
+          <div><b>Silero VAD</b> la llamada cae a «pulsar para hablar» y sigue
+            funcionando, pero deja de ser conversación continua.</div>
+          <div><b>Clave de Groq</b> sin ella no hay transcripción ni respuestas:
+            revise <code>GROQ_API_KEY</code> en el <code>.env</code>.</div>
+          <div><b>Conocimiento</b> con cero fragmentos el agente se abstiene en todo:
+            corra <code>python scripts/build_index.py</code>.</div>
+        </div>
       </div>
     </section>
   </main>
@@ -34,23 +99,53 @@
   <!-- No se carga ort.wasm.min.js: vad.bundle.min.js trae su propio onnxruntime
        y con los dos en juego el VAD no arranca. Ver app/voice/vendor.py. -->
   <script src="/static/vendor/vad.bundle.min.js"></script>
+  <script src="/static/js/tema.js"></script>
   <script src="/static/js/audio.js"></script>
   <script>
     const salida = document.getElementById("resultados");
+    // El rótulo se escribe en su `<span>` y no en el botón entero: el `<svg>` del
+    // icono es hermano suyo y un `textContent` sobre el botón se lo llevaría por
+    // delante en la primera pulsación.
+    const rotulo = document.getElementById("probar-rotulo");
+    const TOTAL_DE_PRUEBAS = 7;
+    let hechas = 0, fallos = 0;
 
     function linea(nombre, ok, detalle) {
+      hechas += 1;
+      if (!ok) fallos += 1;
       const div = document.createElement("div");
       div.className = "variable";
       div.innerHTML = `<div><div class="nombre">${nombre}</div>
         <div class="evidencia">${detalle || ""}</div></div>
-        <div class="valor" style="color:var(--${ok ? "verde" : "rojo"})">${ok ? "OK" : "FALLA"}</div>`;
+        <div class="valor color-${ok ? "verde" : "rojo"}">${ok ? "✓ OK" : "✕ FALLA"}</div>`;
       salida.appendChild(div);
+      document.querySelector("#avance > div").style.width =
+        `${Math.round((hechas / TOTAL_DE_PRUEBAS) * 100)}%`;
+    }
+
+    function veredicto() {
+      const caja = document.getElementById("veredicto");
+      caja.hidden = false;
+      const clase = fallos === 0 ? "buena" : fallos <= 1 ? "dudosa" : "mala";
+      const titulo = fallos === 0
+        ? "Todo listo para la llamada"
+        : `${fallos} de ${hechas} comprobaciones fallaron`;
+      const texto = fallos === 0
+        ? "Micrófono, detector de voz, transcripción y síntesis responden."
+        : "Vea abajo cuál y consulte la tarjeta siguiente.";
+      caja.innerHTML = `<div class="cita ${clase}">
+        <div class="titulo">${titulo}</div><div class="meta">${texto}</div></div>`;
     }
 
     document.getElementById("probar").addEventListener("click", async () => {
       salida.innerHTML = "";
+      hechas = 0; fallos = 0;
+      document.getElementById("veredicto").hidden = true;
+      document.getElementById("avance").hidden = false;
+      document.querySelector("#avance > div").style.width = "0%";
       const boton = document.getElementById("probar");
       boton.disabled = true;
+      rotulo.textContent = "Probando…";
 
       // 1. Requisitos del navegador
       const seguro = window.isSecureContext || location.hostname === "localhost";
@@ -67,7 +162,9 @@
         linea("Micrófono", true, flujo.getAudioTracks()[0].label || "dispositivo por defecto");
       } catch (e) {
         linea("Micrófono", false, e.message);
+        veredicto();
         boton.disabled = false;
+        rotulo.textContent = "Volver a probar";
         return;
       }
 
@@ -122,7 +219,9 @@
       }
 
       flujo.getTracks().forEach((t) => t.stop());
+      veredicto();
       boton.disabled = false;
+      rotulo.textContent = "Volver a probar";
     });
   </script>
 </body>
