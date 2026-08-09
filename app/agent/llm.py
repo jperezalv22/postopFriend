@@ -64,7 +64,11 @@ def modelo_en_uso() -> str:
     rúbrica contrasta las métricas reportadas contra los logs.
     """
     s = get_settings()
-    return s.openrouter_model if s.llm_backend == "openrouter" else s.llm_model
+    if s.llm_backend == "openrouter":
+        return s.openrouter_model
+    if s.llm_backend == "gemini":
+        return s.gemini_model
+    return s.llm_model
 
 
 @lru_cache(maxsize=1)
@@ -149,6 +153,121 @@ def _openrouter_sync(
     )
 
 
+# ─── Ruta de prueba: Gemini ─────────────────────────────────────────────────────
+#
+# Existe para poder **oír** la diferencia, no porque se recomiende: ver la tabla de
+# latencias en `llm_backend` (app/config.py). Va por la capa compatible con OpenAI
+# de Google, y con httpx en vez del SDK de OpenAI a propósito —httpx ya entra como
+# dependencia de `groq`, así que probar esto no añade nada que instalar ni cambia
+# el `pip install` que mide la compuerta G2.
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+
+
+def _gemini_cuerpo(
+    mensajes: list[dict[str, str]], max_tokens: int, temperatura: float,
+    json_estricto: bool, stream: bool,
+) -> dict[str, Any]:
+    s = get_settings()
+    cuerpo: dict[str, Any] = {
+        "model": s.gemini_model,
+        "messages": mensajes,
+        "max_tokens": max_tokens,
+        "temperature": temperatura,
+        # Sin esto la serie 3.x piensa en `medium` y añade segundos al primer token.
+        "reasoning_effort": s.gemini_thinking,
+    }
+    if json_estricto:
+        cuerpo["response_format"] = {"type": "json_object"}
+    if stream:
+        cuerpo["stream"] = True
+        cuerpo["stream_options"] = {"include_usage": True}
+    return cuerpo
+
+
+def _gemini_clave() -> str:
+    s = get_settings()
+    if not s.gemini_api_key:
+        raise RuntimeError(
+            "Falta GEMINI_API_KEY. Solo hace falta con LLM_BACKEND=gemini; "
+            "la app funciona con GROQ_API_KEY."
+        )
+    return s.gemini_api_key
+
+
+def _gemini_sync(
+    mensajes: list[dict[str, str]], max_tokens: int, temperatura: float,
+    json_estricto: bool,
+) -> tuple[str, int, int, bool]:
+    import httpx
+
+    r = httpx.post(
+        GEMINI_URL,
+        headers={"Authorization": f"Bearer {_gemini_clave()}"},
+        json=_gemini_cuerpo(mensajes, max_tokens, temperatura, json_estricto, False),
+        timeout=120.0,
+    )
+    if r.status_code == 429:
+        raise RuntimeError(f"429 rate_limit: {r.text[:300]}")
+    r.raise_for_status()
+    datos = r.json()
+    eleccion = datos["choices"][0]
+    uso = datos.get("usage") or {}
+    return (
+        (eleccion.get("message", {}).get("content") or "").strip(),
+        int(uso.get("prompt_tokens") or 0),
+        int(uso.get("completion_tokens") or 0),
+        eleccion.get("finish_reason") == "length",
+    )
+
+
+def _producir_gemini(
+    mensajes: list[dict[str, str]], max_tokens: int, temperatura: float,
+    texto: list[str], bucle: Any, cola: Any,
+) -> tuple[str, Any]:
+    """Vuelca los trozos de Gemini en la cola. Devuelve (finish_reason, uso).
+
+    Corre en un hilo, igual que la rama de Groq: httpx en modo streaming también
+    es síncrono y bloquearía el WebSocket de la llamada.
+
+    El `uso` se devuelve como namespace y no como dict porque quien lo consume lo
+    lee con `getattr`, igual que el objeto del SDK de Groq.
+    """
+    import json as _json
+    from types import SimpleNamespace
+
+    import httpx
+
+    razon = ""
+    uso = SimpleNamespace(prompt_tokens=0, completion_tokens=0)
+    cuerpo = _gemini_cuerpo(mensajes, max_tokens, temperatura, False, True)
+
+    with httpx.stream(
+        "POST", GEMINI_URL,
+        headers={"Authorization": f"Bearer {_gemini_clave()}"},
+        json=cuerpo, timeout=120.0,
+    ) as flujo:
+        flujo.raise_for_status()
+        for linea in flujo.iter_lines():
+            if not linea.startswith("data: "):
+                continue
+            carga = linea[6:].strip()
+            if carga == "[DONE]":
+                break
+            evento = _json.loads(carga)
+            if evento.get("usage"):
+                uso = SimpleNamespace(
+                    prompt_tokens=int(evento["usage"].get("prompt_tokens") or 0),
+                    completion_tokens=int(evento["usage"].get("completion_tokens") or 0),
+                )
+            for eleccion in evento.get("choices", []):
+                razon = eleccion.get("finish_reason") or razon
+                trozo = (eleccion.get("delta") or {}).get("content")
+                if trozo:
+                    texto.append(trozo)
+                    bucle.call_soon_threadsafe(cola.put_nowait, trozo)
+    return razon, uso
+
+
 def espera_sugerida(e: Exception, intento: int) -> float:
     """Cuánto esperar antes de reintentar, según lo que diga el propio servidor."""
     m = _ESPERA_SUGERIDA.search(str(e))
@@ -178,6 +297,9 @@ def chat_sync(
         extra["response_format"] = {"type": "json_object"}
 
     por_openrouter = s.llm_backend == "openrouter"
+    por_gemini = s.llm_backend == "gemini"
+    if por_gemini:
+        modelo = s.gemini_model
 
     ultimo_error: Exception | None = None
     for intento in range(REINTENTOS + 1):
@@ -186,6 +308,11 @@ def chat_sync(
                 texto, t_in, t_out, truncada, proveedor = _openrouter_sync(
                     mensajes, max_tokens, temperatura, json_estricto
                 )
+            elif por_gemini:
+                texto, t_in, t_out, truncada = _gemini_sync(
+                    mensajes, max_tokens, temperatura, json_estricto
+                )
+                proveedor = "Google"
             else:
                 r = _cliente().chat.completions.create(
                     model=modelo, messages=mensajes, max_tokens=max_tokens,
@@ -246,12 +373,13 @@ async def chat_stream(
     el modelo sigue escribiendo la segunda.
     """
     s = get_settings()
-    modelo = modelo or s.llm_model
-    if s.llm_backend != "groq":
+    por_gemini = s.llm_backend == "gemini"
+    modelo = modelo or (s.gemini_model if por_gemini else s.llm_model)
+    if s.llm_backend == "openrouter":
         # Dicho en voz alta para que nadie mida latencia de voz creyendo que la ruta
         # de la evaluación estaba activa: el turno hablado siempre va directo a Groq.
-        log.warning("LLM_BACKEND=%s no aplica al streaming: la voz va directa a Groq",
-                    s.llm_backend)
+        log.warning("LLM_BACKEND=openrouter no aplica al streaming: la voz va "
+                    "directa a Groq")
     t0 = time.perf_counter()
     cola: asyncio.Queue = asyncio.Queue()
     bucle = asyncio.get_running_loop()
@@ -261,20 +389,24 @@ async def chat_stream(
         uso = None
         razon = ""
         try:
-            flujo = _cliente().chat.completions.create(
-                model=modelo, messages=mensajes, max_tokens=max_tokens,
-                temperature=temperatura, stream=True,
-            )
-            for evento in flujo:
-                if evento.usage is not None:
-                    uso = evento.usage
-                if not evento.choices:
-                    continue
-                delta = evento.choices[0].delta
-                razon = evento.choices[0].finish_reason or razon
-                if delta and delta.content:
-                    texto.append(delta.content)
-                    bucle.call_soon_threadsafe(cola.put_nowait, delta.content)
+            if por_gemini:
+                razon, uso = _producir_gemini(mensajes, max_tokens, temperatura,
+                                              texto, bucle, cola)
+            else:
+                flujo = _cliente().chat.completions.create(
+                    model=modelo, messages=mensajes, max_tokens=max_tokens,
+                    temperature=temperatura, stream=True,
+                )
+                for evento in flujo:
+                    if evento.usage is not None:
+                        uso = evento.usage
+                    if not evento.choices:
+                        continue
+                    delta = evento.choices[0].delta
+                    razon = evento.choices[0].finish_reason or razon
+                    if delta and delta.content:
+                        texto.append(delta.content)
+                        bucle.call_soon_threadsafe(cola.put_nowait, delta.content)
         except Exception as e:
             log.error("el streaming del LLM falló: %s", e)
             bucle.call_soon_threadsafe(
