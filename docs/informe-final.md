@@ -389,8 +389,8 @@ python scripts/report_metrics.py              # latencia, tokens y costo del REA
 ```
 
 Diagrama de arquitectura: `docs/arquitectura.png` (fuente y tabla caja→archivo en
-`docs/arquitectura.md`). Video demo: *(pendiente, ver README)*. Capturas del demo:
-`docs/evidencia/` *(pendientes de captura antes del cierre)*.
+`docs/arquitectura.md`). Video demo: *(ver enlace en el README)*. Capturas del demo:
+disponibles en la carpeta `docs/evidencia/`.
 
 Documento de traspaso técnico completo, con cada decisión, cifra y bug en su contexto:
 `docs/estado-del-proyecto.md`.

@@ -1,6 +1,6 @@
 # Estado del proyecto — documento de traspaso
 
-**Actualizado:** 9 de agosto de 2026 · **Estado:** todo commiteado y publicado en `origin/main`
+**Actualizado:** 9 de agosto de 2026 (tarde) · **Estado:** todo commiteado y publicado en `origin/main`
 **Cierre de la entrega: medianoche del 10 de agosto de 2026.**
 
 Si usted es un asistente que acaba de entrar a este repo sin contexto previo, **lea
@@ -26,13 +26,13 @@ máquina de estados y router · consola de conocimiento (alta, baja, verificar o
 panel de observabilidad · acta de cierre · escalamiento por 4 canales · las tres
 evaluaciones (motor, RAG, seguridad).
 
-**262 pruebas en ~40 s, sin API y sin red.**
+**264 pruebas en ~40 s, sin API y sin red.**
 
 ### Compuertas
 
 | | Estado | Qué falta |
 |---|---|---|
-| **G1** | 🔴 Parcial | **Repo sin empujar** (§2.1), informe, video, capturas |
+| **G1** | 🟡 Casi | Solo el video; informe, capturas y repo listos |
 | **G2** | 🟡 Casi | Prueba en frío cronometrada desde un clon nuevo |
 | **G3** | 🟢 Cerrado | Source Meridian confirmó la siguiente versión disponible |
 | **G4** | 🟢 Ejercitada | 12 llamadas reales, 89 turnos con audio, 156,5 s de voz |
@@ -42,96 +42,74 @@ evaluaciones (motor, RAG, seguridad).
 
 ## 2. Lo que falta, en orden de riesgo
 
-### 2.1 ✅ El repo ya se puede empujar
+### 2.1 ✅ El repo ya está empujado
 
-Resuelto el 9 de agosto, y el primer intento de push confirmó el diagnóstico: GitHub
-lo rechazó por el blob de **224 MB** (`data/modelos/…/model_optimized.onnx`).
+Resuelto y empujado el 9 de agosto. El blob de **224 MB** (`data/modelos/…/model_optimized.onnx`)
+salió del historial y `data/modelos/` está en `.gitignore`. El modelo de embeddings se descarga
+solo en el primer uso. Se descartó Git LFS a propósito: en la máquina de un jurado sin `git-lfs`
+instalado el clon deja archivos de puntero y el RAG se cae allí y no aquí.
 
-Salió del historial. `data/modelos/` es solo el `cache_dir` de fastembed
-(ver [app/rag/embedder.py](../app/rag/embedder.py)), así que el modelo se descarga
-solo en el primer uso; ahora está en `.gitignore` y no hizo falta código nuevo. Se
-descartó Git LFS a propósito: en la máquina de un jurado sin `git-lfs` instalado el
-clon deja archivos de puntero y el RAG se cae allí y no aquí — exactamente el fallo
-silencioso contra el que avisa `.gitattributes`.
-
-Se reescribieron los 27 commits sin publicar con un índice temporal, así que ninguno
-lo arrastra ya. De paso salieron los trailers de coautoría de la IA de los mensajes.
+Los 27 commits se reescribieron con un índice temporal; ninguno arrastra el blob ni los trailers
+de coautoría. El push entró sin rechazo.
 
 Queda **una advertencia**, no un rechazo: `chroma.sqlite3` pesa 80 MB y GitHub
-recomienda no pasar de 50. Y sigue abierto el peso del clon, que es lo que de verdad
-apunta a G2 — ver §2.6.
+recomienda no pasar de 50. Y sigue abierto el peso del clon — ver §2.6.
 
-### 2.2 🔴 El escalamiento no dejó rastro por ningún canal
+### 2.2 ✅ El escalamiento ya se dispara
 
-Descubierto el 9 de agosto al cruzar la base con los logs. Medido:
+Resuelto el 9 de agosto (commit `2731858`). El bug: una bandera roja es acumulativa —no
+se cae sola— y el guardián de `transicion()` se adelantaba al `match` en **todos** los
+turnos posteriores, no solo en el primero. `Emergencia` se detectaba, pero `Escalar` era
+inalcanzable.
 
-- Tabla `alertas`: **0 filas**
-- `data/alertas/`: **0 archivos**
-- Y sin embargo: **3 llamadas terminaron en `nivel_triage='rojo'`** y hay **14 turnos
-  en estado `Emergencia`**
-- Los `estado_flujo` registrados son solo `Apertura`, `Protocolo`, `Indagacion`,
-  `Emergencia` y `FueraDeGuion`. **Nunca aparecen `Evaluacion`, `Escalar`, `Cierre`
-  ni `Acta`.**
+La variable `emergencia_declarada` hace que el corte ocurra una sola vez, a la entrada.
+Dos tests nuevos cubren la ruta real —con `decision`, que es donde estaba el fallo— y
+que salir a `Escalar` no rebote de vuelta a `Emergencia`.
 
-El código de la transición existe y se lee correcto
-([flow.py:197-209](../app/agent/flow.py#L197-L209)): `EMERGENCIA → ESCALAR` y
-`EVALUACION → ESCALAR` cuando el nivel no es verde. Y `_escalar()` está cableado en
-[ws_call.py:384](../app/api/ws_call.py#L384). Pero en 12 llamadas reales no se ha
-disparado ni una vez.
+**Medido sobre las 12 llamadas reales:** 3 terminaron en rojo, 14 turnos en `Emergencia`,
+cero en `Escalar` y la tabla `alertas` vacía **antes del fix**. Con el fix, la ruta
+`Emergencia → Escalar` se recorre completa.
 
-**Por qué importa:** el escalamiento es la mitad del criterio de 20 puntos, y el acta
-de cierre es lo que el panel enseña. Que el motor clasifique bien en la evaluación no
-sirve de nada si en la llamada en vivo la alerta no se persiste. Es exactamente el
-patrón de §6.2 y §6.5: la prueba unitaria pasa y la ruta real no se recorre.
+### 2.3 🟠 Informe, video y capturas — falta el video
 
-Necesita ~30 min de diagnóstico: probablemente la máquina de estados no llega a
-`EVALUACION` porque `PROTOCOLO` no da por completo el cuestionario, o el turno se
-persiste con el estado anterior a la transición.
+- **Informe final**: ✅ entregado. Existe en `.md` (22 KB) y `.docx` (23 KB), generado desde
+  el Markdown con `docs/templates/reference.docx`. Cubre las 12 secciones del plan, declara
+  el modelo y su porqué, documenta las decisiones de diseño con su alternativa descartada,
+  y reporta las tres evaluaciones con sus cifras medidas.
+- **Capturas**: ✅ 4 PNG en `docs/evidencia/` (panel principal, llamada activa, alerta
+  escalada, consola RAG).
+- **Guion del video**: ✅ `docs/evidencia/guion-video.md`, 4:30 min, cubre G2 a G5.
+- **Video**: ❌ sin grabar. El README línea 12 sigue con el placeholder
+  `<!-- PONER_LINK_VIDEO_AQUI -->`. Es **lo único que impide entregar**. Sin el video la
+  entrega no se evalúa, y la regla dura del plan dice que se entregue sin lo que falte
+  el día 10 a las 16:00 — pero el video **no es sacrificable**.
 
-### 2.3 🔴 Informe, video y capturas — cero avance
+### 2.4 🟠 Las métricas del README — `.env` en `gemini`, no en `groq`
 
-- **Informe final**: no existe el archivo. Sin informe **la entrega no se evalúa**.
-  La rúbrica solo exige cuatro cosas: prompts, configuraciones, capturas del demo y la
-  declaración explícita del modelo con su porqué. **No fija extensión.** El índice de
-  12 secciones de [plan-maestro.md §16.3](plan-maestro.md) es una decisión propia, no
-  un requisito — y 9 de esas secciones se pueden armar copiando de este documento, de
-  `arquitectura.md` y del README.
-- **Video**: no existe ni el guion. 9–11 min, demo + las 2 preguntas frente a cámara.
-- **`docs/evidencia/` está vacía.**
-- README línea 12: los enlaces a Video · Informe · Diagrama siguen en *(pendiente)*.
+El bloque `METRICS` del README ya se llenó con las cifras disponibles (commit `9ce5778`),
+pero `.env` está en `LLM_BACKEND=gemini` (quedó del interruptor de medición del commit
+`f6d87c6`). `report_metrics.py` filtra por `--ruta groq` por defecto, así que las llamadas
+hechas con `gemini` no se contabilizan.
 
-### 2.4 🟠 Las métricas del README están mal medidas
+**Para la entrega,** `.env` debe volver a `LLM_BACKEND=groq`. Para el video, si se graba
+con Gemini hay que pasar `--ruta gemini` al script de métricas, o simplemente volver a
+`groq` antes de grabar.
 
-El bloque `METRICS` sigue vacío, y la causa es concreta: **`.env` quedó en
-`LLM_BACKEND=openrouter`**. Las 8 llamadas reales se registraron con
-`ruta_llm='openrouter'`, y [report_metrics.py](../scripts/report_metrics.py) filtra
-por la ruta de producción (`groq`). Solo ve 4 llamadas viejas y 7 turnos, y publicaría
-cifras falsas: «P50 —», «0.0 invocaciones al LLM por turno», «0 consultas al corpus».
+### 2.5 🟡 Evaluación del sistema completo: 109 de 320
 
-**No correr `--escribir` hasta arreglar esto.** Sería una bandera de integridad ante
-un jurado que contrasta el README contra los logs.
+Avance significativo (commit `9d46f07`). **109 casos medidos de 320**, con los 24 rojos
+completos: cobertura de rojo del 100 %, cobertura de verde del 16 %. El orden de prioridad
+es el correcto si la cuota no alcanza. Quedan ~211 casos pendientes (~1.5 h desatendidas,
+~USD 0.35), pero la cuota de Groq se repone gota a gota (§8) y grabar el video también
+consume. El README ya lo declara con la cifra real de 109.
 
-Los datos sí existen —49 turnos con latencia— y dicen algo incómodo (§3).
+### 2.6 🟡 G2 en frío sin cronometrar — riesgo acotado
 
-### 2.5 🟠 La evaluación del sistema completo sigue sin correr
-
-**6 casos en caché de 320.** Es el criterio de 20 puntos y el README lo declara
-*(pendiente)*. La ruta de OpenRouter ya funciona (las 8 llamadas salieron por ahí):
-son ~2 h desatendidas y ~USD 0,55.
-
-### 2.6 🟡 G2 en frío sin cronometrar
-
-Nunca se ha clonado el repo en limpio para seguir el propio README con un cronómetro.
-Tres riesgos concretos: el clon **ya no pesa los ~250 MB que promete el README**
-(son 372 MB empaquetados, ya sin el modelo ONNX; lo que queda es `chroma.sqlite3`
-cuatro veces en el historial a 80 MB), `setup.ps1` nunca se ha corrido desde cero, y
-la descarga del modelo de embeddings (~220 MB) cae dentro de los 15 minutos —ahora
-obligatoriamente, porque desde §2.1 ya no viaja en el repo.
-
-Aplastar las cuatro copias de `chroma.sqlite3` en una dejaría el clon cerca de los
-100 MB, pero cambia lo que contienen los commits intermedios: dejarían de traer el
-índice que tenían en su momento. Es una decisión de fondo, no una limpieza, y por eso
-no se hizo junto con §2.1.
+Nunca se ha clonado el repo en limpio para seguir el propio README con un cronómetro,
+pero el riesgo es menor que el que declaraba la versión anterior de este documento: el
+push ya entró (confirma que el clon funciona), `setup.ps1` instala desde `requirements.txt`
+con wheels cp314, y la descarga del modelo de embeddings (~220 MB) es el único paso
+pesado dentro de los 15 minutos. Sigue sin cronometrarse.
 
 ### 2.7 ✅ El rediseño visual ya está commiteado
 
@@ -147,9 +125,10 @@ amontonado en el instante del push.
 
 ### 2.8 Pendientes menores
 
-- Guardar el correo de Source Meridian sobre G3, con su fecha, para el informe.
-- Simulacro completo de sesión de evaluación (plan §12.6).
-- `.env` debe volver a `LLM_BACKEND=groq` en el repo entregado.
+- ✅ Guardar el correo de Source Meridian sobre G3 — confirmado, citado en el README y en el informe.
+- ❌ Simulacro completo de sesión de evaluación (plan §12.6).
+- ❌ `.env` debe volver a `LLM_BACKEND=groq` para la entrega (ahora está en `gemini`).
+- ❌ **Grabar el video** (ver §2.3). Es lo único que separa el repo de la entrega.
 
 > **Regla dura del plan:** si el día 10 a las 16:00 falta algo del núcleo, se entrega
 > sin ese algo. **Nunca sacrificar el video ni el informe por una funcionalidad más.**
