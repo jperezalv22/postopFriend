@@ -218,7 +218,7 @@ el paciente recibe: el extractor lee el diálogo real, con lo que el paciente di
 solo eso, y el motor decide sobre lo extraído. Reproducible con
 `python evals/run_triage_eval.py`.
 
-Cobertura parcial y declarada: **rojo 24/24 · amarillo 41/50 · verde 40/246** (n=105).
+Cobertura parcial y declarada: **rojo 24/24 · amarillo 45/50 · verde 40/246** (n=109).
 Los casos se piden en orden rojo→amarillo→verde, así que la muestra está sesgada
 hacia lo grave a propósito y **la exactitud global no es comparable** con la del
 motor. Los recalls por nivel sí son válidos sobre esos denominadores.
@@ -226,14 +226,14 @@ motor. Los recalls por nivel sí son válidos sobre esos denominadores.
 | esperado \ obtenido | verde | amarillo | rojo |
 |---|---:|---:|---:|
 | **verde** (n=40) | 27 | 13 | 0 |
-| **amarillo** (n=41) | 2 | 39 | 0 |
+| **amarillo** (n=45) | 4 | 41 | 0 |
 | **rojo** (n=24) | 1 | 9 | 14 |
 
 | | |
 |---|---:|
-| Exactitud (muestra sesgada) | 76.2 % |
+| Exactitud (muestra sesgada) | 75.2 % |
 | Recall de rojo | **58.3 %** |
-| Recall de amarillo | 95.1 % |
+| Recall de amarillo | 91.1 % |
 
 **El 58.3 % pide leerse con la columna de al lado.** De los 24 casos rojos, 14 se
 clasificaron rojo y **9 se escalaron a amarillo**: son pacientes de arquetipo
@@ -250,7 +250,7 @@ lectura es defendible sobre lo dicho, pero **«37 y algo» → 37.0 redondea hac
 lado inseguro**. Resolver los numéricos ambiguos hacia arriba está en
 [limitaciones conocidas](docs/informe-final.md#11-limitaciones-conocidas-y-trabajo-siguiente):
 no se cambió aquí porque el caché de la evaluación se indexa por el hash del prompt
-y tocarlo invalidaría las 105 mediciones, sin cuota para rehacerlas antes del cierre.
+y tocarlo invalidaría las 109 mediciones, sin cuota para rehacerlas antes del cierre.
 
 La brecha entre 100 % (motor) y 58.3 % (sistema) **no es un defecto de las reglas**:
 es el costo de que un paciente real no siempre dice lo que le pasa. Esa es la

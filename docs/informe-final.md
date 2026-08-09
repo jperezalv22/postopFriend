@@ -169,16 +169,16 @@ dos reintentos se escala por precaución.
 **El sistema completo, que es la cifra que importa.** La tabla anterior fija el techo:
 mide las reglas con los valores exactos, no lo que el paciente entrega. Pasando el
 extractor real sobre los diálogos (`evals/run_triage_eval.py`), sobre una muestra
-sesgada a propósito hacia lo grave — **rojo 24/24, amarillo 41/50, verde 40/246**,
-n=105, la cuota no dio para más y los denominadores se citan siempre:
+sesgada a propósito hacia lo grave — **rojo 24/24, amarillo 45/50, verde 40/246**,
+n=109, la cuota no dio para más y los denominadores se citan siempre:
 
 | esperado \ obtenido | verde | amarillo | rojo |
 |---|---:|---:|---:|
 | verde (n=40) | 27 | 13 | 0 |
-| amarillo (n=41) | 2 | 39 | 0 |
+| amarillo (n=45) | 4 | 41 | 0 |
 | rojo (n=24) | 1 | 9 | 14 |
 
-Recall de rojo **58,3 %**, de amarillo 95,1 %. La exactitud global de esta muestra no
+Recall de rojo **58,3 %**, de amarillo 91,1 %. La exactitud global de esta muestra no
 es comparable con el 92,5 % de arriba, porque la mezcla de etiquetas no es la del
 dataset.
 
@@ -200,7 +200,7 @@ defendible sobre lo dicho, salvo que **«37 y algo» → 37,0 redondea hacia el 
 inseguro**. La corrección (resolver numéricos ambiguos hacia arriba, o bajar la
 confianza para que el motor los trate como pendientes) queda en §11 y no se aplicó
 antes del cierre por una razón explícita: el caché de la evaluación se indexa por el
-hash del prompt del extractor, así que tocarlo invalida las 105 mediciones y no había
+hash del prompt del extractor, así que tocarlo invalida las 109 mediciones y no había
 cuota para rehacerlas.
 
 La conclusión que se defiende es esta: la brecha entre el 100 % del motor y el 58,3 %
@@ -347,7 +347,7 @@ flujo de voz en tiempo real ni siquiera ofrece la alterna.
 
 - **Evaluación del sistema completo** (extractor real + motor) sobre los 320 casos: en
   curso, limitada por la cuota gratuita de Groq (§10); a la fecha de este informe corre
-  por lotes con caché incremental (`--solo-cache`). Medidos 105, con los 24 rojos
+  por lotes con caché incremental (`--solo-cache`). Medidos 109 de 320, con los 24 rojos
   completos: la cobertura de rojo es del 100 % y la de verde del 16 %, que es el orden
   correcto de prioridad si la cuota no alcanza.
 - **Numéricos ambiguos redondeados hacia el lado inseguro.** El extractor resuelve
@@ -355,7 +355,7 @@ flujo de voz en tiempo real ni siquiera ofrece la alterna.
   la corrección es acotada: instruir al prompt que ante un valor vital dudoso resuelva
   hacia arriba, o baje la confianza para que el motor lo trate como pendiente y siga
   indagando. No se aplicó antes del cierre porque el caché de `run_triage_eval.py` se
-  indexa por el hash del prompt del extractor: cambiarlo invalida las 105 mediciones y
+  indexa por el hash del prompt del extractor: cambiarlo invalida las 109 mediciones y
   la cuota restante no daba para rehacerlas. Cambiarlo a ciegas, sin poder remedir,
   habría sido peor que documentarlo.
 - **Latencia por la ruta de producción** (`groq`, sin el salto de OpenRouter): pendiente
