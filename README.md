@@ -7,9 +7,11 @@ cuándo escalar a personal humano.
 **Tech Sphere Challenge 2026 · Voice Agent Edition · Source Meridian**
 Juan Pablo Pérez
 
-> **En construcción.** Entrega el 10 de agosto de 2026. Este README refleja lo que
-> hoy corre de verdad; las secciones marcadas *(pendiente)* aún no están.
-> Enlaces a **Video · Informe · Diagrama**: *(pendiente)*
+> **Entrega final · 10 de agosto de 2026**
+> 
+> 📹 **[Video demo](<!-- PONER_LINK_VIDEO_AQUI -->)** (YouTube, oculto)
+> · 📄 **[Informe final](docs/informe-final.md)** ([.docx](docs/informe-final.docx))
+> · 🗺️ **[Diagrama de arquitectura](docs/arquitectura.md)**
 
 ---
 
@@ -162,8 +164,9 @@ Decisiones que vale la pena conocer antes de leer el código:
   discrimina es si una palabra específica de la pregunta aparece alguna vez en el
   índice: `mastectom` aparece **0 veces** en los 107 documentos.
 
-Diagrama completo y tabla de correspondencia caja → archivo: *(pendiente,
-`docs/arquitectura.md`)*
+Diagrama completo y tabla de correspondencia caja → archivo: [docs/arquitectura.md](docs/arquitectura.md)
+— cada caja de cada diagrama mapea al archivo real donde vive. La rúbrica advierte que
+el jurado toma una al azar y la busca en el código: los nombres se hicieron coincidir.
 
 ---
 
@@ -268,8 +271,9 @@ pone la prueba en rojo antes de que el número llegue al informe.
 
 ### Sistema completo (extractor real + motor)
 
-*(pendiente: los 160 × 2 casos. El nivel gratuito de Groq limita a 100 000 tokens
-diarios y la corrida necesita ~900 000.)*
+Medidos **109 de 320 casos** (rojo 24/24 · amarillo 45/50 · verde 40/246), limitados
+por la cuota gratuita de Groq. El desglose está en la sección [Resultados de
+evaluación](#resultados-de-evaluación). Reproducible con `python evals/run_triage_eval.py`.
 
 ### Recuperación (`python evals/run_rag_eval.py`)
 
@@ -335,8 +339,30 @@ forma cara de decir «a veces no».
 ### Latencia, tokens y costo
 
 <!-- METRICS:START -->
-*(pendiente: los genera `scripts/report_metrics.py` desde `logs/turns.jsonl`, nunca se
-escriben a mano)*
+Medido sobre **5 llamadas** y **13 turnos del agente** por `groq` (`llama-3.3-70b-versatile`).
+
+| Métrica | Valor | Nota |
+|---|---:|---|
+| Latencia P50 | 3 607 ms | objetivo 1500 ms · fin de habla → primer audio, reloj del navegador |
+| Latencia P95 | 4 170 ms | máximo observado 4 182 ms |
+| Turnos bajo 1.5 s | 0% | 5 turnos medidos, 8 sin ACK del cliente |
+| ↳ etapa `extractor` P50 | 793 ms | P95 992 ms · 5 turnos |
+| ↳ etapa `llm` P50 | 582 ms | P95 679 ms · 5 turnos |
+| ↳ etapa `stt` P50 | 1 040 ms | P95 1 490 ms · 5 turnos |
+| ↳ etapa `tts` P50 | 1 577 ms | P95 2 178 ms · 6 turnos |
+| ↳ etapa `tts_primer_trozo` P50 | 0 ms | P95 0 ms · 6 turnos |
+| Tokens entrada / salida | 22 972 / 1 481 | acumulados |
+| Invocaciones al LLM por turno | 0.77 | presupuesto declarado: 2 (extractor + generador) |
+| Consultas al corpus | 0 | solo en turnos con pregunta clínica |
+| Costo por turno | US$ 0.001136 |  |
+| Costo por llamada | US$ 0.002954 | 4.6 turnos de media |
+| Proyección 1 000 llamadas | US$ 2.95 | 1000 llamadas del mismo perfil que las 5 medidas · tarifas de llama-3.3-70b-versatile y whisper-large-v3-turbo |
+
+Tarifas de `llama-3.3-70b-versatile` y `whisper-large-v3-turbo`, consultadas el 2026-08-07 en https://groq.com/pricing. edge-tts no cobra.
+
+Incidencias registradas: `segunda_pregunta_eliminada` 2 · `respuesta_truncada_a_2_frases` 1.
+
+<sub>Generado por `python scripts/report_metrics.py --escribir` desde `data/postop.db`. No se edita a mano.</sub>
 <!-- METRICS:END -->
 
 ### Estado del conocimiento
