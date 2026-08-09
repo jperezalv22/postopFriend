@@ -37,6 +37,12 @@ ESTATICOS = get_settings().dir_raiz / "app" / "static"
 # hablar». Aquí funcionaba y en una máquina limpia no: se fija explícitamente.
 mimetypes.add_type("text/javascript", ".mjs")
 mimetypes.add_type("application/wasm", ".wasm")
+# Mismo motivo para las tipografías autohospedadas de `app/static/fonts/`. Los
+# navegadores no son estrictos con el MIME de las fuentes, así que aquí lo peor
+# que puede pasar es una advertencia en la consola — pero el registro de Windows
+# tampoco es de fiar para `.woff2`, y la lista de arriba ya existe justamente para
+# no depender de él.
+mimetypes.add_type("font/woff2", ".woff2")
 
 
 @asynccontextmanager
