@@ -69,7 +69,7 @@ Docker, ni GPU, ni compilador.
 ### Windows
 
 ```powershell
-git clone <URL-DEL-REPO> && cd postopFriend
+git clone https://github.com/jperezalv22/postopFriend.git && cd postopFriend
 .\setup.ps1
 # pegue su clave en .env
 .\.venv\Scripts\uvicorn.exe app.main:app
@@ -78,7 +78,7 @@ git clone <URL-DEL-REPO> && cd postopFriend
 ### Linux / macOS
 
 ```bash
-git clone <URL-DEL-REPO> && cd postopFriend
+git clone https://github.com/jperezalv22/postopFriend.git && cd postopFriend
 bash setup.sh
 # pegue su clave en .env
 .venv/bin/uvicorn app.main:app
