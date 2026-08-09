@@ -381,7 +381,7 @@ async def _procesar_turno(
         await sesion.enviar(tipo="citas", turno_idx=idx, citas=[c.como_dict() for c in citas])
 
     # ─── 8. Escalamiento ─────────────────────────────────────────────────────
-    if ctx.estado is Estado.ESCALAR and not sesion.alerta_id:
+    if ctx.estado in (Estado.ESCALAR, Estado.EMERGENCIA) and not sesion.alerta_id:
         await _escalar(sesion, decision, estado, respuesta)
 
     await _hablar(sesion, respuesta, idx, traza, cachear=bool(guion))

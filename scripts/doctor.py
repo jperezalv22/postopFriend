@@ -91,6 +91,8 @@ def revisar_indice(s) -> None:
         )
         return
     try:
+        from app.store import db
+        db.inicializar()
         from app.rag import store
 
         e = store.estado()
