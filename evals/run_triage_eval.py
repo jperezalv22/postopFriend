@@ -27,6 +27,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import re
 import time
 from datetime import date
 from pathlib import Path
@@ -46,9 +47,32 @@ log = logging.getLogger("eval")
 logging.basicConfig(level=logging.WARNING, format="  %(message)s")
 
 
+def modelo_del_cache() -> str:
+    """Qué modelo produjo la extracción, independiente de quién la facturó.
+
+    Groq y OpenRouter sirven **el mismo** `llama-3.3-70b-versatile` —la ruta de
+    OpenRouter va fijada a Groq y se comprueba en la respuesta (app/agent/llm.py)—,
+    así que comparten caché: mezclarlos no mezcla modelos. Gemini sí es otro
+    modelo y no puede caer en el mismo sitio.
+    """
+    s = get_settings()
+    return s.gemini_model if s.llm_backend == "gemini" else s.llm_model
+
+
 def clave_cache(caso: Caso) -> Path:
     version = hashlib.sha256(extractor.cargar_prompt().encode("utf-8")).hexdigest()[:12]
-    return CACHE / version / f"{caso.caso_id}__{caso.capa}.json"
+    # El caché es por prompt **y por modelo**. Sin esto, correr la evaluación con
+    # otro modelo sobrescribe las mediciones del anterior caso por caso, y la
+    # tabla resultante describe una mezcla de dos sistemas que no es ninguno de
+    # los dos. Se descubrió antes de correr Gemini sobre las 105 ya medidas.
+    #
+    # El modelo declarado en `llm_model` se queda en la raíz para no invalidar
+    # esas 105; cualquier otro va a su propio subdirectorio.
+    modelo = modelo_del_cache()
+    base = CACHE / version
+    if modelo != get_settings().llm_model:
+        base = base / re.sub(r"[^a-z0-9.-]+", "_", modelo.lower())
+    return base / f"{caso.caso_id}__{caso.capa}.json"
 
 
 # Incidencias que significan «la API no contestó», no «el paciente no lo dijo».
