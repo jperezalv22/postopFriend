@@ -70,6 +70,35 @@ class TestEmergencia:
         ctx = Contexto(estado=Estado.EMERGENCIA)
         assert transicion(ctx, Intencion.RESPONDE) is Estado.ESCALAR
 
+    def test_la_bandera_que_sigue_puesta_no_atrapa_la_llamada_en_emergencia(self):
+        """La ruta real, que la prueba de arriba no recorre.
+
+        `test_desde_emergencia_se_escala_siempre` pasa `decision=None`, y sin
+        decisión el guardián de emergencia no se dispara. En una llamada de verdad
+        el estado clínico es **acumulativo**: la bandera roja sigue puesta en cada
+        turno posterior, el guardián vuelve a dispararse antes del `match` y la
+        máquina no sale nunca de `Emergencia`. Medido en las 12 llamadas reales:
+        3 terminaron en rojo, 14 turnos en `Emergencia`, `Escalar` cero veces y la
+        tabla `alertas` vacía.
+        """
+        ctx = Contexto(estado=Estado.PROTOCOLO)
+        d = decision(Nivel.ROJO, 8, ["sangrado_activo"])
+        assert transicion(ctx, Intencion.RESPONDE, d) is Estado.EMERGENCIA
+        assert transicion(ctx, Intencion.RESPONDE, d) is Estado.ESCALAR
+        assert transicion(ctx, Intencion.RESPONDE, d) is Estado.CIERRE
+
+    def test_la_emergencia_no_rebota_entre_escalar_y_emergencia(self):
+        """Salir de `Emergencia` no puede devolver a `Emergencia` en el turno siguiente.
+
+        Si el guardián solo mirara «¿estoy en Emergencia?», desde `Escalar` volvería
+        a dispararse —la bandera sigue puesta— y la llamada rebotaría entre los dos
+        estados sin llegar nunca al acta.
+        """
+        ctx = Contexto(estado=Estado.PROTOCOLO)
+        d = decision(Nivel.ROJO, 8, ["sangrado_activo"])
+        recorrido = [str(transicion(ctx, Intencion.RESPONDE, d)) for _ in range(5)]
+        assert recorrido == ["Emergencia", "Escalar", "Cierre", "Acta", "Fin"]
+
 
 class TestIndagacion:
     def test_una_evasiva_repregunta_la_misma_variable(self):

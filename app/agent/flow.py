@@ -78,6 +78,11 @@ class Contexto:
     identidad_confirmada: bool = False
     incidencias: list[str] = field(default_factory=list)
     turnos: int = 0
+    # La emergencia corta el protocolo **una vez**. Sin esta marca, el guardián de
+    # `transicion()` vuelve a dispararse en cada turno posterior —el estado clínico
+    # es acumulativo y la bandera roja no se cae sola— y la llamada no sale nunca de
+    # `Emergencia` para llegar a `Escalar`.
+    emergencia_declarada: bool = False
 
     def anotar(self, incidencia: str) -> None:
         if incidencia not in self.incidencias:
@@ -148,9 +153,19 @@ def transicion(ctx: Contexto, intencion: Intencion, decision: Decision | None = 
 
     # Una bandera roja corta el protocolo desde cualquier estado. No se termina de
     # preguntar por el apetito cuando el paciente acaba de decir que está sangrando.
-    if intencion is Intencion.EMERGENCIA or (decision and decision.nivel is Nivel.ROJO
-                                             and decision.red_flags):
+    #
+    # El corte es de **entrada**, no un estado del que no se sale: `emergencia_declarada`
+    # existe porque la condición sigue siendo cierta en todos los turnos siguientes
+    # —el estado clínico acumula y la bandera roja no desaparece—, así que sin la
+    # marca este `return` se adelantaba al `match` para siempre y `Escalar` era
+    # inalcanzable. Se midió: 3 llamadas rojas, 14 turnos en `Emergencia`, cero en
+    # `Escalar` y la tabla `alertas` vacía.
+    if not ctx.emergencia_declarada and (
+        intencion is Intencion.EMERGENCIA
+        or (decision and decision.nivel is Nivel.ROJO and decision.red_flags)
+    ):
         ctx.estado = Estado.EMERGENCIA
+        ctx.emergencia_declarada = True
         ctx.anotar("emergencia_detectada")
         return _registrar(ctx, anterior)
 
