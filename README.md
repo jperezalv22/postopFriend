@@ -8,8 +8,8 @@ cuándo escalar a personal humano.
 Juan Pablo Pérez
 
 > **Entrega final · 10 de agosto de 2026**
-> 
-> 📹 **[Video demo](<!-- PONER_LINK_VIDEO_AQUI -->)** (YouTube, oculto)
+>
+> 📹 **[Video demo](https://youtu.be/OWtqg6Htu9s)** (YouTube, oculto)
 > · 📄 **[Informe final](docs/informe-final.md)** ([.docx](docs/informe-final.docx))
 > · 🗺️ **[Diagrama de arquitectura](docs/arquitectura.md)**
 
@@ -84,12 +84,12 @@ bash setup.sh
 .venv/bin/uvicorn app.main:app
 ```
 
-Abra **http://127.0.0.1:8000**.
+Abra **<http://127.0.0.1:8000>**.
 
 ### Qué se descarga y cuánto pesa
 
 | Paso | Peso | Tiempo típico |
-|---|---:|---|
+| --- | ---: | --- |
 | `git clone` (incluye el corpus de 107 PDFs y el índice ya construido) | ~250 MB | 1–3 min |
 | `pip install -r requirements.txt` | ~180 MB | 1–3 min |
 | Modelo de embeddings (`setup` lo baja por adelantado) | ~220 MB | 1–2 min |
@@ -113,11 +113,11 @@ falla, dice qué comando lo arregla.
 ## Cómo probar cada compuerta en dos minutos
 
 | Compuerta | Cómo se prueba hoy |
-|---|---|
+| --- | --- |
 | **G2** reproducibilidad | `python scripts/doctor.py` — todo en verde |
 | **G3** modelo permitido | `python scripts/check_models.py` — evidencia contra la API viva |
-| **G4** voz en tiempo real | http://127.0.0.1:8000/salud-voz comprueba micrófono, VAD, servidor y voz en 10 s. Luego, en `/`, elija un paciente y pulse **Iniciar llamada**: el agente habla primero. |
-| **G5** conocimiento vivo | En http://127.0.0.1:8000/consola. Escriba una pregunta sobre un tema que el corpus no cubra en **Probar el conocimiento**: dirá que se abstendría, y por qué. Suba un PDF o TXT sobre ese tema y repita la pregunta: ahora responde y cita. Pulse **eliminar** y vuelva a preguntar: se abstiene otra vez. El botón **Verificar olvido** lo demuestra con el conteo en cero y el JSON de la búsqueda. |
+| **G4** voz en tiempo real | <http://127.0.0.1:8000/salud-voz> comprueba micrófono, VAD, servidor y voz en 10 s. Luego, en `/`, elija un paciente y pulse **Iniciar llamada**: el agente habla primero. |
+| **G5** conocimiento vivo | En <http://127.0.0.1:8000/consola>. Escriba una pregunta sobre un tema que el corpus no cubra en **Probar el conocimiento**: dirá que se abstendría, y por qué. Suba un PDF o TXT sobre ese tema y repita la pregunta: ahora responde y cita. Pulse **eliminar** y vuelva a preguntar: se abstiene otra vez. El botón **Verificar olvido** lo demuestra con el conteo en cero y el JSON de la búsqueda. |
 
 Sin micrófono: la interfaz de llamada tiene un campo de texto que hace el mismo
 recorrido completo (transcripción → agente → voz).
@@ -196,13 +196,13 @@ sistema — si las reglas no clasifican bien con los valores exactos, ningún ex
 lo va a salvar. Reproducible con `python evals/run_engine_eval.py`.
 
 | esperado \ obtenido | verde | amarillo | rojo |
-|---|---:|---:|---:|
+| --- | ---: | ---: | ---: |
 | **verde** (n=123) | 111 | 12 | 0 |
 | **amarillo** (n=25) | 0 | 25 | 0 |
 | **rojo** (n=12) | 0 | 0 | 12 |
 
 | | |
-|---|---:|
+| --- | ---: |
 | Exactitud | **92.5 %** |
 | Recall de rojo | **100 %** |
 | Recall de amarillo | **100 %** |
@@ -227,13 +227,13 @@ hacia lo grave a propósito y **la exactitud global no es comparable** con la de
 motor. Los recalls por nivel sí son válidos sobre esos denominadores.
 
 | esperado \ obtenido | verde | amarillo | rojo |
-|---|---:|---:|---:|
+| --- | ---: | ---: | ---: |
 | **verde** (n=40) | 27 | 13 | 0 |
 | **amarillo** (n=45) | 4 | 41 | 0 |
 | **rojo** (n=24) | 1 | 9 | 14 |
 
 | | |
-|---|---:|
+| --- | ---: |
 | Exactitud (muestra sesgada) | 75.2 % |
 | Recall de rojo | **58.3 %** |
 | Recall de amarillo | 91.1 % |
@@ -282,7 +282,7 @@ evaluación](#resultados-de-evaluación). Reproducible con `python evals/run_tri
 correr sin clave de API.
 
 | | |
-|---|---:|
+| --- | ---: |
 | hit@4 | **96 %** (24/25) |
 | MRR | 0.733 |
 | Citas verificables | **100 %** (100/100) |
@@ -314,7 +314,7 @@ obligado a reindexar los 9 512 fragmentos.
 Las tres penalizaciones que la rúbrica nombra, con veredicto caso por caso.
 
 | | |
-|---|---:|
+| --- | ---: |
 | Inyección de prompt (voz y fuentes) | **10/10** |
 | Dosis o fármacos sin respaldo | **3/3** |
 | Tranquilizar ante bandera roja | **3/3** |
@@ -342,7 +342,7 @@ forma cara de decir «a veces no».
 Medido sobre **5 llamadas** y **13 turnos del agente** por `groq` (`llama-3.3-70b-versatile`).
 
 | Métrica | Valor | Nota |
-|---|---:|---|
+| --- | ---: | --- |
 | Latencia P50 | 3 607 ms | objetivo 1500 ms · fin de habla → primer audio, reloj del navegador |
 | Latencia P95 | 4 170 ms | máximo observado 4 182 ms |
 | Turnos bajo 1.5 s | 0% | 5 turnos medidos, 8 sin ACK del cliente |
@@ -354,11 +354,11 @@ Medido sobre **5 llamadas** y **13 turnos del agente** por `groq` (`llama-3.3-70
 | Tokens entrada / salida | 22 972 / 1 481 | acumulados |
 | Invocaciones al LLM por turno | 0.77 | presupuesto declarado: 2 (extractor + generador) |
 | Consultas al corpus | 0 | solo en turnos con pregunta clínica |
-| Costo por turno | US$ 0.001136 |  |
+| Costo por turno | US$ 0.001136 | |
 | Costo por llamada | US$ 0.002954 | 4.6 turnos de media |
 | Proyección 1 000 llamadas | US$ 2.95 | 1000 llamadas del mismo perfil que las 5 medidas · tarifas de llama-3.3-70b-versatile y whisper-large-v3-turbo |
 
-Tarifas de `llama-3.3-70b-versatile` y `whisper-large-v3-turbo`, consultadas el 2026-08-07 en https://groq.com/pricing. edge-tts no cobra.
+Tarifas de `llama-3.3-70b-versatile` y `whisper-large-v3-turbo`, consultadas el 2026-08-07 en <https://groq.com/pricing>. edge-tts no cobra.
 
 Incidencias registradas: `segunda_pregunta_eliminada` 2 · `respuesta_truncada_a_2_frases` 1.
 
